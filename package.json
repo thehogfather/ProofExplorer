@@ -1,0 +1,9 @@
+{
+  "amd": {},
+  "volo": {
+    "baseUrl": "www/lib",
+    "dependencies": {
+      "d3": "github:mbostock/d3/v3.4.6"
+    }
+  }
+}

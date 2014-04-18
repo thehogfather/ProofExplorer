@@ -1,0 +1,23 @@
+ path {
+     fill: none;
+     stroke: #888;
+ }
+ .collapsed,
+ .selected.collapsed {
+     fill: #87adf5;
+ }
+ circle:hover {
+     fill: #beb6b6;
+ }
+ .selected {
+     stroke: #eb9d48;
+     fill: #beb6b6;
+     stroke-width: 2px;
+ }
+ .dragging {
+     stroke: red;
+     fill: red;
+ }
+ path.dragging {
+     fill: none;
+ }
