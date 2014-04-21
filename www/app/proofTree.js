@@ -9,6 +9,24 @@ define(function (require, exports, module) {
     "use strict";
     
     var d3 = require("d3");
+    var alphabet = "abcdefghijklmnopqrstuvwxyz";
+    
+    function word() {
+        var len = Math.ceil(Math.random() * 8), i, res = [], index;
+        for (i = 0; i < len; i++) {
+            index = Math.ceil(Math.random() * alphabet.length - 1);
+            res.push(alphabet[index]);
+        }
+        return res.join("");
+    }
+    
+    function randDescription() {
+        var len = Math.ceil(Math.random() * 10), i, res = [];
+        for (i = 0; i < len; i++) {
+            res.push(word());
+        }
+        return res.join(" ");
+    }
     
     function getTreeData(depth, numChildren) {
         depth = depth || 4;
@@ -20,7 +38,7 @@ define(function (require, exports, module) {
             } else {
                 var n = Math.ceil(Math.random() * numChildren);
                 var children = d3.range(0, n).map(function (d) {
-                    return t(depth - 1, {name: "child"});
+                    return t(depth - 1, {name: "child", description: randDescription()});
                 });
                 
                 node.children = children;
@@ -28,7 +46,7 @@ define(function (require, exports, module) {
             }
         }
         
-        return t(depth, {name: "root"});
+        return t(depth, {name: "root", description: randDescription()});
     }
     
     module.exports = {

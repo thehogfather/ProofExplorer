@@ -166,6 +166,10 @@ define(function (require, exports, module) {
                 .append("g").attr("class", "node")
                 .attr("transform", "translate(" + parent.x0 + " " + parent.y0 + ")");
             
+            enteredNodes.append("foreignObject").attr("width", 100).attr("height", 50)
+                .append("xhtml:body").append("div").attr("class", "nodelabel").html(function (d) {
+                    return d.description;
+                });
             enteredNodes.append("circle")
                 .attr("r", function (d) {
                     return d._children ? rad * 1.5 : rad;
@@ -274,26 +278,27 @@ define(function (require, exports, module) {
             d3.selectAll(".node circle").call(drag);
         }
         
-        var link = svg.selectAll(".link")
-            .data(links).enter()
-            .append("path")
-            .attr("class", "link")
-            .attr("d", diagonal);
-        
-        var node = svg.selectAll(".node")
-            .data(nodes).enter()
-            .append("g").attr("class", "node")
-            .attr("transform", function (d) {
-                return "translate(" + d.x + " " + d.y + ")";
-            });
-        
-        node.append("circle").attr("r", rad)
-            .on("mouseover", onMouseOver)
-            .on("mouseout", onMouseOut)
-            .on("mousedown", onMouseDown)
-            .on("click", toggleCollapse);
+//        var link = svg.selectAll(".link")
+//            .data(links).enter()
+//            .append("path")
+//            .attr("class", "link")
+//            .attr("d", diagonal);
+//        
+//        var node = svg.selectAll(".node")
+//            .data(nodes).enter()
+//            .append("g").attr("class", "node")
+//            .attr("transform", function (d) {
+//                return "translate(" + d.x + " " + d.y + ")";
+//            });
+//        
+//        node.append("circle").attr("r", rad)
+//            .on("mouseover", onMouseOver)
+//            .on("mouseout", onMouseOut)
+//            .on("mousedown", onMouseDown)
+//            .on("click", toggleCollapse);
         
         registerDrag();
+        updateTree(data);
     }
     
     module.exports = {

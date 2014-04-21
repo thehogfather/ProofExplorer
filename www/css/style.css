@@ -21,3 +21,13 @@
  path.dragging {
      fill: none;
  }
+
+.nodelabel {
+    background: rgb(236, 217, 217);
+    font-size: 10px;
+    padding: 2px;
+    border-radius: 5px;
+    overflow-y: auto;
+    max-height: 40px;
+    border: 1px solid rgb(187, 175, 181);   
+}
