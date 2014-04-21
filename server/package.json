@@ -11,6 +11,10 @@
     "theorem",
     "prover"
   ],
+  "dependencies": {
+     "xmlrpc": "1.2.x",
+     "es6-promise": "1.1.x"
+  },
   "author": "Patrick Oladimeji",
   "license": "GPLv3"
 }
