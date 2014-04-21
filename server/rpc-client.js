@@ -9,27 +9,37 @@
 
 (function () {
     "use strict";
+    //declare required libraries
+    var xmlrpc = require("xmlrpc"),
+        Promise = require("es6-promise").Promise,
+        util = require("util");
     
-    var xmlrpc = require("xmlrpc");
-    var Promise = require("es6-promise").Promise;
-    var express = require("express");
-    var port = 12345;
+    //declare hosts and ports
+    var pvsHost = "localhost",
+        pvsPort = 12345,
+        xmlRPCRequestPath = "/RPC2",
+        callbackHost = "localhost",
+        callbackPort = 12346;
     
-    var server = xmlrpc.createServer({host: "192.168.1.98", port: port});
+    //declare list of proof commands
+    var grind = "(grind)",
+        skosimp_star = "(skosimp*)",
+        assert = "(assert)";
     
+    var server = xmlrpc.createServer({host: callbackHost, port: callbackPort});
+    var cbUrl = util.format("http://%s:%d", callbackHost, callbackPort);
+    
+    var client = xmlrpc.createClient({host: pvsHost, port: pvsPort, path: xmlRPCRequestPath});
+
     server.on("request", function (err, params, callback) {
         if (err) {
             console.log("error");
             console.log(err);
         } else {
-            console.log("inside server");
             console.log(params);
-            callback(params);
+            callback(null, params);
         }
     });
-    
-    var cbUrl = "http://192.168.1.98:12345";
-    var client = xmlrpc.createClient({host: "192.168.1.100", port: port, path: "/RPC2"});
 
     function makePVSRequest(request) {
         console.log("Sending request " + JSON.stringify(request));
@@ -39,9 +49,8 @@
                 if (err) {
                     reject(err);
                 } else {
-                    console.log("so I got a response back");
                     res = JSON.parse(res);
-                    resolve(res);
+                    resolve(JSON.stringify(res, null, " "));
                 }
             });
         });
@@ -49,17 +58,31 @@
         return p;
     }
         
-    var examples = "/home/chimed/pvs-github/PVS/Examples";
+    function proofCommand(command) {
+        return {method: "proof-command", params: [command]};
+    }
+        
+    var examples = "/home/chimed/pvs-github/ProofExplorer/examples";
     var changeContext = {method: "change-context", params: [examples], id: new Date().getTime()},
-        typeCheck = {method: "typecheck", params: ["ackerman"]};
+        typeCheck = {method: "typecheck", params: ["predictability_th"]},
+        proveFormula = {method: "prove-formula", params: ["dn_button_predictable", "predictability_th"]},
+        grindCommand = proofCommand(grind);
     
     makePVSRequest(changeContext)
         .then(function (res) {
             console.log(res);
             return makePVSRequest(typeCheck);
-        }).then(function (res) {
-            console.log(res);
         }, function (err) {
             console.log(err);
+        }).then(function (res) {
+            console.log(res);
+            return makePVSRequest(proveFormula);
+        }, function (err) {
+            console.log(err);
+        }).then(function (res) {
+            console.log(res);
+            return makePVSRequest(grindCommand);
+        }).then(function (res) {
+            console.log(res);
         });
 }());
