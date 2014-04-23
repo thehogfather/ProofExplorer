@@ -12,19 +12,20 @@
     //declare required libraries
     var xmlrpc = require("xmlrpc"),
         Promise = require("es6-promise").Promise,
-        util = require("util");
+        util = require("util"),
+        express = require("express"),
+        bodyParser = require("body-parser");
     
+    var clientPVSProxy = express();//this is how the client sends messages to the PVS server
+    clientPVSProxy.use(bodyParser());
     //declare hosts and ports
-    var pvsHost = "localhost",
+    var pvsHost = "172.16.62.212",
         pvsPort = 12345,
         xmlRPCRequestPath = "/RPC2",
-        callbackHost = "localhost",
+        callbackHost = "130.107.98.54",
         callbackPort = 12346;
     
-    //declare list of proof commands
-    var grind = "(grind)",
-        skosimp_star = "(skosimp*)",
-        assert = "(assert)";
+   
     
     var server = xmlrpc.createServer({host: callbackHost, port: callbackPort});
     var cbUrl = util.format("http://%s:%d", callbackHost, callbackPort);
@@ -40,7 +41,7 @@
             callback(null, params);
         }
     });
-
+    
     function makePVSRequest(request) {
         console.log("Sending request " + JSON.stringify(request));
         request.id = request.id || new Date().getTime();
@@ -57,32 +58,18 @@
         
         return p;
     }
-        
-    function proofCommand(command) {
-        return {method: "proof-command", params: [command]};
-    }
-        
-    var examples = "/home/chimed/pvs-github/ProofExplorer/examples";
-    var changeContext = {method: "change-context", params: [examples], id: new Date().getTime()},
-        typeCheck = {method: "typecheck", params: ["predictability_th"]},
-        proveFormula = {method: "prove-formula", params: ["dn_button_predictable", "predictability_th"]},
-        grindCommand = proofCommand(grind);
     
-    makePVSRequest(changeContext)
-        .then(function (res) {
-            console.log(res);
-            return makePVSRequest(typeCheck);
-        }, function (err) {
-            console.log(err);
-        }).then(function (res) {
-            console.log(res);
-            return makePVSRequest(proveFormula);
-        }, function (err) {
-            console.log(err);
-        }).then(function (res) {
-            console.log(res);
-            return makePVSRequest(grindCommand);
-        }).then(function (res) {
-            console.log(res);
-        });
+    
+    clientPVSProxy.all("/pvs", function (req, res) {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        console.log(req.body);
+        makePVSRequest(req.body)
+            .then(function (pvsres) {
+                res.send(pvsres);
+            });
+    });
+    
+    clientPVSProxy.listen(8083);
+    console.log("pvs proxy listening on 8083");
 }());

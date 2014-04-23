@@ -1,18 +1,30 @@
  path {
      fill: none;
      stroke: #888;
+     stroke-width: 3px;
+     stroke-opacity: 0.8;
  }
  .collapsed,
  .selected.collapsed {
      fill: #87adf5;
  }
  circle:hover {
-     fill: #beb6b6;
+     stroke-width: 3px;
  }
- .selected {
-     stroke: #eb9d48;
-     fill: #beb6b6;
-     stroke-width: 2px;
+
+.node circle.command {
+    fill: #944;
+}
+
+circle.ghost {
+    opacity: 0.6;
+    stroke-width: 3px;
+    stroke-opacity: 1;
+}
+
+ .node circle.selected {
+     stroke: #e31cea;
+     stroke-width: 4px;
  }
  .dragging {
      stroke: red;
@@ -22,6 +34,15 @@
      fill: none;
  }
 
+.node circle{
+    fill: #9da39d; 
+    stroke: green;
+}
+
+.node circle.collapsed {
+    stroke-width: 4px;   
+}
+
 .nodelabel {
     background: rgb(236, 217, 217);
     font-size: 10px;
@@ -29,5 +50,10 @@
     border-radius: 5px;
     overflow-y: auto;
     max-height: 40px;
-    border: 1px solid rgb(187, 175, 181);   
+    border: 1px solid rgb(187, 175, 181);  
+    display: none;
+}
+
+.button text {
+    alignment-baseline: text-before-edge;   
 }

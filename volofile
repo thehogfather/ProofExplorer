@@ -1,0 +1,22 @@
+/**
+* 
+* @author Patrick Oladimeji
+* @date 4/23/14 13:12:19 PM
+*/
+/*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
+/*global define, d3, module, exports, require, $, brackets, window, MouseEvent */
+module.exports = {
+    build: {
+        summary: "builds the project",
+        run: "r.js -o tools/build.js"
+    },
+    makeLocalDir: {
+        summary: "creates a local directory for the published project",
+        run: "mkdir /Users/patrick/Sites/ProofExplorer"
+    },
+    publish: {
+        depends: ["build"],
+        summary: "pushes the files to the local server",
+        run: "cp -rv www-built/ /Users/patrick/Sites/ProofExplorer"
+    }
+};
