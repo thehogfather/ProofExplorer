@@ -19,7 +19,7 @@
     var clientPVSProxy = express();//this is how the client sends messages to the PVS server
     clientPVSProxy.use(bodyParser());
     //declare hosts and ports
-    var pvsHost = "172.16.62.212",
+    var pvsHost = "172.16.62.216",
         pvsPort = 12345,
         xmlRPCRequestPath = "/RPC2",
         callbackHost = "130.107.98.54",

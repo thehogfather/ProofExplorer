@@ -8,7 +8,8 @@
 define(function (require, exports, module) {
     "use strict";
     
-    var d3 = require("d3");
+    var d3 = require("d3"),
+        uuid = require("app/util/uuidGenerator");
     var alphabet = "abcdefghijklmnopqrstuvwxyz";
     
     function word() {
@@ -29,8 +30,8 @@ define(function (require, exports, module) {
     }
     
     function getTreeData(depth, numChildren) {
-        depth = depth || 4;
-        numChildren = numChildren || 3;
+        depth = depth === undefined ? 4 : depth;
+        numChildren = numChildren === undefined ? 3 : numChildren;
         
         function t(depth, node) {
             if (depth === 0) {
@@ -50,6 +51,14 @@ define(function (require, exports, module) {
     }
     
     module.exports = {
-        getTreeData: getTreeData
+        getTreeData: getTreeData,
+        generateRandomChildren : function (n) {
+            n = isNaN(n) ? 3 : n;
+            var res = getTreeData(1, n).children;
+            res.forEach(function (c) {
+                c.id = uuid();
+            });
+            return res;
+        }
     };
 });

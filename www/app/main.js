@@ -9,7 +9,8 @@ define(function (require, exports, module) {
     "use strict";
     
     var comm = require("app/PVSComm");
-    var UI       = require("app/UserInterface");
+    var UI       = require("app/UserInterface"),
+        PVSSession = require("app/PVSSession");
     UI.createUI();
     
      //declare list of proof commands
@@ -17,28 +18,32 @@ define(function (require, exports, module) {
         skosimp_star = "(skosimp*)",
         assert = "(assert)";
     
-    function proofCommand(command) {
-        return {method: "proof-command", params: [command]};
-    }
-    
-    var examples = "/home/chimed/pvs-github/ProofExplorer/examples";
-    var changeContext = {method: "change-context", params: [examples], id: new Date().getTime()},
-        typeCheck = {method: "typecheck", params: ["predictability_th"]},
-        proveFormula = {method: "prove-formula", params: ["dn_button_predictable", "predictability_th"]},
-        grindCommand = proofCommand(grind);
+   
     
     
-    comm.sendCommand(changeContext)
-        .then(function (res) {
-            console.log(res);
-            return comm.sendCommand(typeCheck);
-        }).then(function (res) {
-            console.log(res);
-            return comm.sendCommand(proveFormula);
-        }).then(function (res) {
-            console.log(res);
-            return comm.sendCommand(grindCommand);
-        }).then(function (res) {
-            console.log(res);
-        });
+//    comm.sendCommand(changeContext)
+//        .then(function (res) {
+//            console.log(res);
+//            return comm.sendCommand(typeCheck);
+//        }).then(function (res) {
+//            console.log(res);
+//            return comm.sendCommand(proveFormula);
+//        })
+//        .then(function (res) {
+//            console.log(res);
+//            return comm.sendCommand(grindCommand);
+//        })
+//        .then(function (res) {
+//            console.log(res);
+//            return comm.sendCommand(proofCommand('(case "2=0")'));
+//        })
+//        .then(function (res) {
+//            console.log(res);
+//            return comm.sendCommand(proofCommand('(case "1=0")'));
+//        }).then(function (res) {
+//            console.log(res);
+//            return comm.sendCommand(proofCommand("(postpone) (postpone)"));
+//        }).then(function (res) {
+//            console.log(res);
+//        });
 });

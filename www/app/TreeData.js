@@ -100,8 +100,16 @@ define(function (require, exports, module) {
         data = currentNode = root;
     }
     
+    TreeData.prototype.visitAll = function (f) {
+        visitAll(f, data);
+    };
+    
     TreeData.prototype.depth = function () {
         return depth(data);
+    };
+    
+    TreeData.prototype.find = function (node) {
+        return find(node.id, data);
     };
     
     TreeData.copyTree = function (node) {

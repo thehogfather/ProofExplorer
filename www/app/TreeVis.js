@@ -12,10 +12,11 @@ define(function (require, exports, module) {
         deepCopy = require("app/deepcopy"),
         eventDispatcher = require("app/util/eventDispatcher"),
         TreeData = require("app/TreeData"),
-        proofCommands = require("app/util/ProofCommands");
+        proofCommands = require("app/util/ProofCommands"),
+        TreeGenerator = require("app/RandomTreeGenerator");
     
-    var vis = eventDispatcher({});
-
+    var vis = eventDispatcher({}), treeGeneratorCommand;
+    
     function render(_data) {
         var targetNode, draggedNode, drag;
         var el = d3.select("#proofTree");
@@ -37,6 +38,7 @@ define(function (require, exports, module) {
             .attr("width", w + margin.left + margin.top)
             .attr("height", h + margin.bottom + margin.top)
             .call(zoom).on("dblclick.zoom", null);
+        
         board.append("rect").attr("width", w).attr("height", h).attr("fill", "white");
         
         svg = board.attr("pointer-events", "all")
@@ -218,6 +220,26 @@ define(function (require, exports, module) {
             });
         }
         
+        function replaceChildren(node, children) {
+            var color = proofCommands.getColor(node.command);
+            //delete any collapsed nodes
+            node._children = null;
+            node.children = children;
+            getSourceLinks(node).style("stroke", color).classed("command", true);
+            updateTree(node);
+        }
+        
+        function appendChildren(node, children) {
+            var color = proofCommands.getColor(node.command);
+            node.children = node.children || node._children || [];
+            node.children = node.children.concat(children);
+            var newIds = children.map(function (d) { return d.id; });
+            var newLinks = getSourceLinks(node).filter(function (d) {
+                return newIds.indexOf(d.target.id) > -1;
+            });
+            newLinks.style("stroke", color).classed("command", true);
+            updateTree(node);
+        }
         /**
             Add a proof command (strategy to the selected node)
         */
@@ -232,21 +254,9 @@ define(function (require, exports, module) {
                     //if g wasnt supplied get it from the dom
                     g = g || getNodeElements(node);
                     g.select(".command").remove();
-                    var color = proofCommands.getColor(command);
                     var c = g.insert("circle", "circle");
                     decorateCommandNode(c);
-
-                    //get new children for this node 
-                    var newChildren = TreeData.generateRandomChildren();
-                    var newIds = newChildren.map(function (d) { return d.id; });
-                    //add them for now dont replace
-                    node.children = node.children || [];
-                    node.children = node.children.concat(newChildren);
-                    updateTree(node);
-                    getSourceLinks(node).filter(function (d) {
-                        return newIds.indexOf(d.target.id) > -1;
-                    }).style("stroke", color).classed("command", true);
-                    resolve({node: node, newChildren: newChildren});
+                    resolve(node);
                 }
             });
         };
@@ -264,17 +274,40 @@ define(function (require, exports, module) {
             updateTree(node);
         };
         
-        function copyCommand(source, target) {
+        /**
+            Execute a command on the pvs server and replace the children nodes with the resolved 
+            promise.
+            
+            @param promise a promise to run to obtain data about the node and children to use as replacement in the node
+        */
+        function executeCommand(promise) {
+            return promise.then(function (data) {
+                replaceChildren(data.node, data.children);
+                return Promise.resolve(data);
+            });
+        }
+        
+        /**
+            Copies a command from source node to target node and runs the treeGenCommand function
+            which should resolve with data of form {node:{}, children:[]}
+        */
+        function copyCommand(source, target, treeGenCommand) {
+            //sequence is to add command to tree node
+            //then to execute that command on the server for that node
+            //question is how we make sure the server has the right state
             return addCommand(target, source.command)
+                .then(function (node) {
+                    return executeCommand(treeGenCommand(node));
+                })
                 .then(function (res) {
-                    var node = res.node, newChildren = res.newChildren;
+                    var node = res.node, newChildren = res.children;
                     //if the target is already a child of the source we need to filter it out
                     var childCommands = source.children.filter(function (d) {
-                        return d !== target;
+                        return d.id !== target.id;
                     }), promises;
                     if (childCommands && childCommands.length) {
                         promises = childCommands.map(function (cc, cindex) {
-                            return cc.command ? copyCommand(cc, newChildren[cindex])
+                            return cc.command ? copyCommand(cc, newChildren[cindex], treeGenCommand)
                                 : Promise.reject("no command");
                         });
                         //try to resolve all the promises
@@ -313,10 +346,12 @@ define(function (require, exports, module) {
                         targetNode.children = targetNode._children || [];
                     }
                     //copy command to target node 
-                    copyCommand(d, targetNode)
-                        .then(function (res) {
-                            console.log(res);
-                        });
+                    copyCommand(TreeData.copyTree(d), targetNode, treeGeneratorCommand || function (node) {
+                        var numChildren = proofCommands.getMaxChildren(node.command);
+                        return Promise.resolve({node: node, children: TreeGenerator.generateRandomChildren(numChildren)});
+                    }).then(function (res) {
+                        console.log(res);
+                    });
                     //update the tree
                     updateTree(targetNode);
                     tx = targetNode.x;
@@ -359,6 +394,14 @@ define(function (require, exports, module) {
         bindKeys();
         
         vis.addCommand = addCommand;
+        vis.replaceChildren = replaceChildren;
+        vis.appendChildren = appendChildren;
+        vis.executeCommand = executeCommand;
+        
+        vis.registerTreeGeneratorCommand = function (d) {
+            treeGeneratorCommand = d;
+        };
+        
     }
     
     vis.render = render;
