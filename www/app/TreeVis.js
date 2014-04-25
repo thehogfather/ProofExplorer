@@ -17,12 +17,10 @@ define(function (require, exports, module) {
     
     var vis = eventDispatcher({}), treeGeneratorCommand;
     
-    function render(_data) {
+    function render(treeData) {
         var targetNode, draggedNode, drag;
         var el = d3.select("#proofTree");
-        
-        var treeData = new TreeData(_data);
-        
+                
         var levelHeight = 70, margin = {top: 50, left: 50, right: 50, bottom: 50};
         
         var w = 900, h = treeData.depth() * levelHeight, rad = 10;
@@ -173,8 +171,6 @@ define(function (require, exports, module) {
             enteredNodes.append("circle")
                 .attr("r", function (d) {
                     return d._children ? rad * 1.5 : rad;
-                }).classed("collapsed", function (d) {
-                    return d._children ? true : false;
                 })
                 .on("dblclick", toggleCollapse)
                 .on("mousedown", onMouseDown)
@@ -188,6 +184,8 @@ define(function (require, exports, module) {
             var updatedNodes = node.transition().duration(duration)
                 .attr("transform", function (d) {
                     return "translate(" + d.x + " " + d.y + ")";
+                }).attr("class", function (d) {
+                    return d._children ? "node collapsed" : d.active ? "node active" : "node";
                 });
             
             var link = svg.selectAll(".link").data(links, function (d) {return d.target.id; });
@@ -201,11 +199,11 @@ define(function (require, exports, module) {
             
             enteredLinks.style("stroke", function (d) {
                 return proofCommands.getColor(d.source.command);
-            }).classed("command", function (d) {
-                return d.source.command;
             });
             
-            link.transition().duration(duration)
+            link.classed("active", function (d) {
+                return d.target && d.target.active;
+            }).transition().duration(duration)
                 .attr("d", diagonal);
             
             link.exit().transition().duration(duration)
@@ -402,6 +400,12 @@ define(function (require, exports, module) {
             treeGeneratorCommand = d;
         };
         
+        vis.initialise = function (session) {
+            session.addListener("statechanged", function (event) {
+                var data = event.tree.getData();
+                updateTree(data);
+            });
+        };
     }
     
     vis.render = render;

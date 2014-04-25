@@ -35,7 +35,7 @@ define(function (require, exports, module) {
     */
     function updateTree(tree, oldState, newState) {
         var children, i, numSubgoals, id, newStateIndex, parent;
-        if (newState.label.indexOf(oldState.label) === 0) {
+        if (oldState && newState.label.indexOf(oldState.label) === 0) {
             if (!allStates[newState.label]) {
                 //create all the subgoal children 
                 children = [];
@@ -48,7 +48,7 @@ define(function (require, exports, module) {
                 parent = tree.find(oldState.label);
                 if (parent) {
                     parent.children = children;
-                } else {console.error("could not find parent"); }
+                } else {console.log("could not find parent"); }
             }
             //so we have seen this state before or at least we have created a node for it so just update the node status
             //probably just done a postpone
@@ -66,12 +66,12 @@ define(function (require, exports, module) {
     }
     
     PVSSession.prototype.updateCurrentState = function (res) {
-        var s = res.jsonrpc_result.result.label, previousState = currentState;
-        if (s !== currentState) {
+        var s = res.jsonrpc_result.result, previousState = currentState, ps = this;
+        if (!currentState || s.label !== currentState.label) {
             currentState = s;
-            allStates[currentState] = new Date().getTime();
             updateTree(proofTree, previousState, currentState);
-            this.fire({type: "statechanged", state: s, previous: previousState, tree: proofTree});
+            allStates[currentState.label] = new Date().getTime();
+            ps.fire({type: "statechanged", state: s, previous: previousState, tree: proofTree});
         }
         return Promise.resolve(res);
     };
@@ -90,13 +90,14 @@ define(function (require, exports, module) {
     /**
         Sends a request to proove a formula in the given theory file
     */
-    PVSSession.prototype.prooveFormula = function (formula, theory) {
+    PVSSession.prototype.proveFormula = function (formula, theory) {
         var ps = this;
         return comm.sendCommand({method: "prove-formula", params: [formula, theory]})
-            .then(ps.updateCurrentState)
             .then(function (res) {
-                proofTree = new TreeData({id: currentState, name: currentState});
-                ps.fire({type: "treechanged", tree: proofTree});
+                currentState = res.jsonrpc_result.result;
+                allStates[currentState.label] = new Date().getTime();
+                proofTree = new TreeData({id: currentState.label, name: currentState.label});
+                ps.fire({type: "treecreated", tree: proofTree});
                 return Promise.resolve(res);
             });
     };
@@ -105,13 +106,17 @@ define(function (require, exports, module) {
     PVSSession.prototype.sendCommand = function (command) {
         var ps = this;
         return comm.sendCommand(command)
-            .then(ps.updateCurrentState);
+            .then(function (res) {
+                return ps.updateCurrentState(res);
+            });
     };
     
     PVSSession.prototype.postpone = function () {
         var ps = this;
         return comm.sendCommand({method: "proof-command", params: ["(postpone)"]})
-            .then(ps.updateCurrentState);
+            .then(function (res) {
+                return ps.updateCurrentState(res);
+            });
     };
                   
     

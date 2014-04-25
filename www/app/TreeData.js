@@ -108,8 +108,8 @@ define(function (require, exports, module) {
         return depth(data);
     };
     
-    TreeData.prototype.find = function (node) {
-        return find(node.id, data);
+    TreeData.prototype.find = function (id) {
+        return find(id, data);
     };
     
     TreeData.copyTree = function (node) {
