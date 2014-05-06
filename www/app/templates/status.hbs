@@ -1,0 +1,41 @@
+<div>
+    <h3>{{result.label}}</h4>
+    <div class="commentary">
+        {{#each result.commentary}}
+        <p>{{this}}</p>
+        {{/each}}
+    </div>
+    {{#if result.sequent}}
+    <div class="sequent">
+         {{#if result.sequent.antecedents}}
+        <div class="antecedents">
+            <h4>antecedents</h5>
+            <div>
+                <ul>
+                {{#each result.sequent.antecedents}}
+                <li> 
+                    {{cedent this}}
+                </li>
+                {{/each}}
+                </ul>
+            </div>
+        </div>
+        {{/if}}
+        
+        {{#if result.sequent.succedents}}
+        <div class="succedents">
+            <h4>succedents</h5>
+            <div>
+                <ul>
+                {{#each result.sequent.succedents}}                
+                <li>
+                    {{cedent this}}
+                </li>
+                {{/each}}
+                </ul>
+            </div>
+        </div>
+        {{/if}}
+    </div>
+    {{/if}}
+</div>

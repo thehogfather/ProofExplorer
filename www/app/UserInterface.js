@@ -10,9 +10,10 @@ define(function (require, exports, module) {
     var d3 = require("d3"),
         treeVis = require("app/TreeVis"),
         TreeGenerator = require("app/RandomTreeGenerator"),
-        PVSComm = require("app/PVSComm"),
+//        PVSComm = require("app/PVSComm"),
         proofCommands = require("app/util/ProofCommands"),
         PVSSession = require("app/PVSSession"),
+        StatusLogger = require("app/util/StatusLogger"),
         nodeRad = 10;
 
     var commands = proofCommands.getCommands(),
@@ -40,37 +41,25 @@ define(function (require, exports, module) {
             .addListener("mouseout.node", onTreeNodeMouseOut);
     }
     
-//    function bindTestingCommand() {
-//        d3.select("button#send").on("click", function () {
-//            var cmd = d3.select("#txtCommand").property("value");
-//            if (cmd && cmd.length) {
-//                PVSComm.sendCommand(JSON.parse(cmd))
-//                    .then(function (res) {
-//                        console.log(res);
-//                    });
-//            }
-//        });
-//    }
-    
     function proofCommand(command) {
         return {method: "proof-command", params: [command]};
     }
     
     function createUI() {
-        var pad = 20, iconRad = 30, w = (iconRad * 2  + pad) * commands.length, h = iconRad * 2, colors = d3.scale.category10();
+        var pad = 20, iconRad = 15, w = (iconRad * 2  + pad) * commands.length, h = iconRad * 2, colors = d3.scale.category10();
         
         var context = "/home/chimed/pvs-github/ProofExplorer/examples",
             file = "predictability_th",
             session = new PVSSession();
-       
         
         function createControls() {
-            //map the string data to create objects whose label attributes is the string
+            //map the string data to create objects whose command attributes is the string
             var data = commands.map(function (d) {
                 return {x: 0, y: 0, command: d};
             });
 
-            var tb = d3.select("svg g");
+            //var tb = d3.select("svg g");
+            var tb = d3.select("svg").insert("g", "g");
             var icong = tb.selectAll(".button").data(data).enter()
                 .append("g").attr("class", "button")
                 .attr("transform", function (d, i) {
@@ -85,8 +74,18 @@ define(function (require, exports, module) {
                     return proofCommands.getColor(d.command);
                 }).style("stroke", function (d, i) {
                     return d3.rgb(proofCommands.getColor(d.command)).darker();
+                }).on("click", function (d) {
+                    if (d.command === "(postpone)") {
+                        session.sendCommand(proofCommand(d.command))
+                            .then(function (res) {
+                                StatusLogger.log(res);
+                            });
+                    }
                 });
-            icong.append("text").attr("y", iconRad * 2).text(function (d) { return d.command; });
+            icong.append("text").attr("y", iconRad * 2)
+                .attr("x", iconRad)
+                .attr("text-anchor", "middle")
+                .text(function (d) { return d.command; });
             //register drag listener
             var drag = d3.behavior.drag().origin(function (d) {
                 return d;
@@ -112,13 +111,11 @@ define(function (require, exports, module) {
                         .then(function (node) {
                             var numChildren = proofCommands.getMaxChildren(d.command);
                             var pvsCommand = proofCommand(d.command);
-                            //The getTreeCommand is an asynchronous call to process a command on a branch of a proof tree
+                            //The sendCommand is an asynchronous call to process a command on a branch of a proof tree
                             //it should resolve to an object containing {node: object, children: array}
-
-                            //this is currently a test block
                             session.sendCommand(pvsCommand)
                                 .then(function (res) {
-                                    console.log(res);
+                                    StatusLogger.log(res);
     //                                var getTreeCommand = Promise.resolve({node: node, children: TreeGenerator.generateRandomChildren(numChildren)});
     //                                //we send this command to the visual tree so that it can use the result to create the appropriate visual
     //                                //representation once the Promise has been resolved
@@ -136,10 +133,10 @@ define(function (require, exports, module) {
          //begin the session
         session.begin(context, file)
             .then(function (res) {
-                console.log(res);
+                StatusLogger.log(res);
                 return session.proveFormula("dn_button_predictable", "predictability_th");
             }).then(function (res) {
-                console.log(res);
+                StatusLogger.log(res);
             });
         
         session.addListener("treecreated", function (event) {

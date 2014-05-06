@@ -79,6 +79,30 @@ define(function (require, exports, module) {
         return null;
     }
     
+    function leafIndex(leaf, root, count) {
+        var i, child, res;
+        count = count || 0;
+        res = {index: count};
+        for (i = 0; i < root.children.length; i++) {
+            child = root.children[i];
+            if (child.children) {
+                res = leafIndex(leaf, child, res.index);
+                if (res.found) {
+                    return res;
+                }
+            } else {
+                res.index += 1;
+                if (leaf.id === child.id) {
+                    res.found = true;
+                    return res;
+                }
+            }
+        }
+        
+        return res;
+        
+    }
+    
     function depth(node) {
         if (!node || !node.children || !node.children.length) { return 1; }
         return 1 + node.children.map(function (c) {
@@ -146,6 +170,17 @@ define(function (require, exports, module) {
     
     TreeData.prototype.getData = function () {
         return data;
+    };
+    
+    TreeData.prototype.leafWalk = function (from, to) {
+        var lastChildIndex = leafIndex(data.children[data.children.length - 1], data);
+        var f = leafIndex(from, data),
+            t = leafIndex(to, data);
+        var dist = t.index - f.index;
+        if (dist < 0) {
+            dist = dist + lastChildIndex.index + 1;
+        }
+        return dist;
     };
     
     TreeData.generateRandomChildren = function () {

@@ -56,7 +56,8 @@ circle.ghost {
 }
 
 .button text {
-    alignment-baseline: text-before-edge;   
+    alignment-baseline: text-before-edge;
+    font-size: 10px;
 }
 
 .active circle {
@@ -66,4 +67,7 @@ circle.ghost {
 
 path.active {
     stroke-dasharray: none;   
+}
+.sequent ul {
+    list-style: none;   
 }

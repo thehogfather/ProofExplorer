@@ -9,10 +9,16 @@ define(function (require, exports, module) {
     "use strict";
     var comm = require("app/PVSComm"),
         TreeData = require("app/TreeData"),
-        eventDispatcher = require("app/util/eventDispatcher");
+        eventDispatcher = require("app/util/eventDispatcher"),
+        d3 = require("d3");
     
     var currentState, proofTree, allStates, ps;
     
+    function repeat(str, n) {
+        return d3.range(0, n).map(function () {
+            return str;
+        }).join(" ");
+    }
     /**
         sets the active node in the tree
     */
@@ -64,7 +70,9 @@ define(function (require, exports, module) {
         allStates = {};
         ps = this;
     }
-    
+    /**
+         Updates the current state using the data from the pvsresponse 
+    */
     PVSSession.prototype.updateCurrentState = function (res) {
         var s = res.jsonrpc_result.result, previousState = currentState, ps = this;
         if (!currentState || s.label !== currentState.label) {
@@ -72,6 +80,9 @@ define(function (require, exports, module) {
             updateTree(proofTree, previousState, currentState);
             allStates[currentState.label] = new Date().getTime();
             ps.fire({type: "statechanged", state: s, previous: previousState, tree: proofTree});
+        } else {
+            //stat did not change
+            ps.fire({type: "stateunchanged", state: currentState, tree: proofTree});
         }
         return Promise.resolve(res);
     };
@@ -111,9 +122,10 @@ define(function (require, exports, module) {
             });
     };
     
-    PVSSession.prototype.postpone = function () {
+    PVSSession.prototype.postpone = function (n) {
+        n = n || 1;
         var ps = this;
-        return comm.sendCommand({method: "proof-command", params: ["(postpone)"]})
+        return comm.sendCommand({method: "proof-command", params: [repeat("(postpone)", n)]})
             .then(function (res) {
                 return ps.updateCurrentState(res);
             });

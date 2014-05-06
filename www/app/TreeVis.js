@@ -13,12 +13,14 @@ define(function (require, exports, module) {
         eventDispatcher = require("app/util/eventDispatcher"),
         TreeData = require("app/TreeData"),
         proofCommands = require("app/util/ProofCommands"),
-        TreeGenerator = require("app/RandomTreeGenerator");
+        TreeGenerator = require("app/RandomTreeGenerator"),
+        StatusLogger = require("app/util/StatusLogger");
     
-    var vis = eventDispatcher({}), treeGeneratorCommand;
+    var vis = eventDispatcher({}), treeGeneratorCommand, _session;
+    
     
     function render(treeData) {
-        var targetNode, draggedNode, drag;
+        var targetNode, draggedNode, drag, selectedLeaf;
         var el = d3.select("#proofTree");
                 
         var levelHeight = 70, margin = {top: 50, left: 50, right: 50, bottom: 50};
@@ -55,6 +57,18 @@ define(function (require, exports, module) {
                 d3.selectAll(".selected").classed("selected", false);
             }
             d3.select(this).classed("selected", true);
+                
+            if (!d.children) {
+                if (selectedLeaf) {
+                    var n = treeData.leafWalk(selectedLeaf, d);
+                    console.log(n);
+                    _session.postpone(n)
+                        .then(function (res) {
+                            StatusLogger.log(res);
+                        });
+                }
+                selectedLeaf = d;
+            }
         };
         
         onMouseOver = function (d) {
@@ -401,9 +415,17 @@ define(function (require, exports, module) {
         };
         
         vis.initialise = function (session) {
+            _session = session;
             session.addListener("statechanged", function (event) {
                 var data = event.tree.getData();
                 updateTree(data);
+            }).addListener("stateunchanged", function (event) {
+                console.log(event);
+                //remove the command to show that it has no effect
+                d3.select(".node.active .command").transition().duration(500).attr("r", 0)
+                    .each("end", function () {
+                        d3.select(this).remove();
+                    });
             });
         };
     }

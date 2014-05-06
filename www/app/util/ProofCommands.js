@@ -10,7 +10,7 @@ define(function (require, exports, module) {
     var d3 = require("d3");
     
     var colors = d3.scale.category20();
-    var commands = ["(grind)", "(split)", "(skeep)", "(postpone)"];
+    var commands = ['(case "1=0")', "(grind)", "(split)", "(skeep)", "(postpone)"];
     var maxChildren = [9, 2, 1, 1];
     module.exports = {
         getColor: function (command) {
