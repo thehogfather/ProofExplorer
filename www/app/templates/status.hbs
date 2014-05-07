@@ -1,10 +1,6 @@
 <div>
     <h3>{{result.label}}</h4>
-    <div class="commentary">
-        {{#each result.commentary}}
-        <p>{{this}}</p>
-        {{/each}}
-    </div>
+    
     {{#if result.sequent}}
     <div class="sequent">
          {{#if result.sequent.antecedents}}
@@ -38,4 +34,9 @@
         {{/if}}
     </div>
     {{/if}}
+    <div class="commentary">
+        {{#each result.commentary}}
+        <p>{{this}}</p>
+        {{/each}}
+    </div>
 </div>

@@ -10,7 +10,6 @@ define(function (require, exports, module) {
     var d3 = require("d3"),
         treeVis = require("app/TreeVis"),
         TreeGenerator = require("app/RandomTreeGenerator"),
-//        PVSComm = require("app/PVSComm"),
         proofCommands = require("app/util/ProofCommands"),
         PVSSession = require("app/PVSSession"),
         StatusLogger = require("app/util/StatusLogger"),
@@ -18,7 +17,8 @@ define(function (require, exports, module) {
 
     var commands = proofCommands.getCommands(),
         draggedCommand,
-        targetNodeEvent;
+        targetNodeEvent,
+        session = new PVSSession();
     
     function onTreeNodeMouseOver(event) {
         if (draggedCommand) {
@@ -36,21 +36,37 @@ define(function (require, exports, module) {
         targetNodeEvent = null;
     }
     
-    function bindEvents() {
-        treeVis.addListener("mouseover.node", onTreeNodeMouseOver)
-            .addListener("mouseout.node", onTreeNodeMouseOut);
+    function onTreeNodeClicked(event) {
+        
     }
     
     function proofCommand(command) {
         return {method: "proof-command", params: [command]};
     }
     
+    function bindEvents() {
+        treeVis.addListener("mouseover.node", onTreeNodeMouseOver)
+            .addListener("mouseout.node", onTreeNodeMouseOut)
+            .addListener("click.node", onTreeNodeClicked);
+        
+        //add event for free text
+        d3.select("#send").on("click", function () {
+            var command = d3.select("#txtCommand").property("value");
+            session.sendCommand(proofCommand(command))
+                .then(function (res) {
+                    console.log(res);
+                    StatusLogger.log(res);
+                });
+        });
+    }
+    
+  
+    
     function createUI() {
         var pad = 20, iconRad = 15, w = (iconRad * 2  + pad) * commands.length, h = iconRad * 2, colors = d3.scale.category10();
         
         var context = "/home/chimed/pvs-github/ProofExplorer/examples",
-            file = "predictability_th",
-            session = new PVSSession();
+            file = "predictability_th";
         
         function createControls() {
             //map the string data to create objects whose command attributes is the string
@@ -107,24 +123,31 @@ define(function (require, exports, module) {
                 ghostNode.style("display", null);
             }).on("dragend", function (d) {
                 if (targetNodeEvent) {
-                    treeVis.addCommand(targetNodeEvent.nodeData, d.command, d3.select(targetNodeEvent.nodeEl.node().parentNode))
-                        .then(function (node) {
-                            var numChildren = proofCommands.getMaxChildren(d.command);
-                            var pvsCommand = proofCommand(d.command);
-                            //The sendCommand is an asynchronous call to process a command on a branch of a proof tree
-                            //it should resolve to an object containing {node: object, children: array}
-                            session.sendCommand(pvsCommand)
-                                .then(function (res) {
-                                    StatusLogger.log(res);
-    //                                var getTreeCommand = Promise.resolve({node: node, children: TreeGenerator.generateRandomChildren(numChildren)});
-    //                                //we send this command to the visual tree so that it can use the result to create the appropriate visual
-    //                                //representation once the Promise has been resolved
-    //                                treeVis.executeCommand(getTreeCommand);
+                    var tData = targetNodeEvent.nodeData,
+                        tEl = targetNodeEvent.nodeEl;
+                    session.postponeUntil(targetNodeEvent.nodeData.id)
+                        .then(function () {
+                            treeVis.addCommand(tData, d.command, d3.select(tEl.node().parentNode))
+                                .then(function (node) {
+                                    ghostNode.remove();
+                                    draggedCommand = null;
+                                    var numChildren = proofCommands.getMaxChildren(d.command);
+                                    var pvsCommand = proofCommand(d.command);
+                                    //The sendCommand is an asynchronous call to process a command on a branch of a proof tree
+                                    //it should resolve to an object containing {node: object, children: array}
+                                    session.sendCommand(pvsCommand)
+                                        .then(function (res) {
+                                            StatusLogger.log(res);
+                                            
+            //                                var getTreeCommand = Promise.resolve({node: node, children: TreeGenerator.generateRandomChildren(numChildren)});
+            //                                //we send this command to the visual tree so that it can use the result to create the appropriate visual
+            //                                //representation once the Promise has been resolved
+            //                                treeVis.executeCommand(getTreeCommand);
+                                        });
                                 });
                         });
                 }
-                ghostNode.remove();
-                draggedCommand = null;
+                
             });
 
             tb.selectAll("circle").call(drag);

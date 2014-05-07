@@ -20,7 +20,7 @@ define(function (require, exports, module) {
     
     
     function render(treeData) {
-        var targetNode, draggedNode, drag, selectedLeaf;
+        var targetNode, draggedNode, drag;
         var el = d3.select("#proofTree");
                 
         var levelHeight = 70, margin = {top: 50, left: 50, right: 50, bottom: 50};
@@ -48,26 +48,25 @@ define(function (require, exports, module) {
         
         var tree = d3.layout.tree().size([w, h]);
         
-        var toggleCollapse, onMouseOver, onMouseOut, onMouseDown, addCommand;
+        var toggleCollapse, onMouseOver, onMouseOut, onMouseDown, addCommand, onClick;
        
+        onClick = function (d) {
+            vis.fire({type: "click.node", nodeData: d, nodeEl: d3.select(this)});
+        };
+        
         onMouseDown = function (d) {
             d3.event.preventDefault();
             d3.event.stopPropagation();
-            if (!d3.event.shiftKey) {//deselect previous selections if shift wasnt pressed
-                d3.selectAll(".selected").classed("selected", false);
-            }
-            d3.select(this).classed("selected", true);
+//            if (!d3.event.shiftKey) {//deselect previous selections if shift wasnt pressed
+//                d3.selectAll(".selected").classed("selected", false);
+//            }
+//            d3.select(this).classed("selected", true);
                 
             if (!d.children) {
-                if (selectedLeaf) {
-                    var n = treeData.leafWalk(selectedLeaf, d);
-                    console.log(n);
-                    _session.postpone(n)
-                        .then(function (res) {
-                            StatusLogger.log(res);
-                        });
-                }
-                selectedLeaf = d;
+                _session.postponeUntil(d.id)
+                    .then(function (res) {
+                        StatusLogger.log(res);
+                    });
             }
         };
         
@@ -189,7 +188,8 @@ define(function (require, exports, module) {
                 .on("dblclick", toggleCollapse)
                 .on("mousedown", onMouseDown)
                 .on("mouseover", onMouseOver)
-                .on("mouseout", onMouseOut);
+                .on("mouseout", onMouseOut)
+                .on("click", onClick);
             
             var exitedNodes = node.exit().transition().duration(duration)
                 .attr("transform", "translate(" + parent.x + " " + parent.y + ")")
@@ -357,13 +357,15 @@ define(function (require, exports, module) {
                     if (!targetNode.children) {
                         targetNode.children = targetNode._children || [];
                     }
-                    //copy command to target node 
+                    //TODO copy command to target node but first check if the current command is the active node and 
+                    //make sure it is active before excuting the command on it
                     copyCommand(TreeData.copyTree(d), targetNode, treeGeneratorCommand || function (node) {
                         var numChildren = proofCommands.getMaxChildren(node.command);
                         return Promise.resolve({node: node, children: TreeGenerator.generateRandomChildren(numChildren)});
                     }).then(function (res) {
                         console.log(res);
                     });
+                   
                     //update the tree
                     updateTree(targetNode);
                     tx = targetNode.x;

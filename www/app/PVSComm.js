@@ -8,21 +8,32 @@
 define(function (require, exports, module) {
     "use strict";
     var server = "http://localhost:8083/pvs",
-        d3 = require("d3"),
-        uuid = require("app/util/uuidGenerator");
+        uuid = require("app/util/uuidGenerator"),
+        WSClient = require("app/WebSocketClient");
     
     function sendCommand(comm) {
         console.log(comm);
         return new Promise(function (resolve, reject) {
-            d3.json(server)
-                .header("Content-Type", "application/json")
-                .post(JSON.stringify(comm), function (err, res) {
+            WSClient.getInstance()
+                .send({type: "PVSRequest", request: comm}, function (err, res) {
                     if (err) {
                         reject(err);
                     } else {
-                        resolve(res);
+                        resolve(JSON.parse(res.response));
                     }
                 });
+        });
+    }
+    
+    function sendResponse(res) {
+        console.log(res);
+        return new Promise(function (resolve, reject) {
+            res.type = "PVSResponse";
+            WSClient.getInstance()
+                .send(res, function (err, res) {
+                    
+                });
+            resolve("sent");
         });
     }
     
@@ -48,6 +59,7 @@ define(function (require, exports, module) {
     module.exports = {
         sendCommand: sendCommand,
         changeContext: changeContext,
-        typeCheck: typeCheck
+        typeCheck: typeCheck,
+        sendResponse: sendResponse
     };
 });

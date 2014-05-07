@@ -12,10 +12,12 @@
     "prover"
   ],
   "dependencies": {
-     "xmlrpc": "1.2.x",
-     "es6-promise": "0.1.x",
-      "express": "~4.0.0",
-      "body-parser": "~1.0.0"
+        "xmlrpc": "1.2.x",
+        "es6-promise": "0.1.x",
+        "express": "~4.0.0",
+        "body-parser": "~1.0.0",
+        "tracer": "0.7.1",
+        "ws": "0.4.x"
   },
   "author": "Patrick Oladimeji",
   "license": "GPLv3"

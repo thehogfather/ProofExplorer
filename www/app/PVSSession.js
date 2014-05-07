@@ -12,7 +12,7 @@ define(function (require, exports, module) {
         eventDispatcher = require("app/util/eventDispatcher"),
         d3 = require("d3");
     
-    var currentState, proofTree, allStates, ps;
+    var currentState, proofTree, allStates, ps, activeState;
     
     function repeat(str, n) {
         return d3.range(0, n).map(function () {
@@ -30,6 +30,7 @@ define(function (require, exports, module) {
         var node = tree.find(state.label);
         if (node) {
             node.active = true;
+            activeState = node;
         }
     }
     
@@ -86,7 +87,7 @@ define(function (require, exports, module) {
         }
         return Promise.resolve(res);
     };
-    
+
     /**
      Initiates a pvs session with the server
     */
@@ -108,6 +109,7 @@ define(function (require, exports, module) {
                 currentState = res.jsonrpc_result.result;
                 allStates[currentState.label] = new Date().getTime();
                 proofTree = new TreeData({id: currentState.label, name: currentState.label});
+                setActiveNode(currentState, proofTree);
                 ps.fire({type: "treecreated", tree: proofTree});
                 return Promise.resolve(res);
             });
@@ -122,15 +124,32 @@ define(function (require, exports, module) {
             });
     };
     
-    PVSSession.prototype.postpone = function (n) {
-        n = n || 1;
+    PVSSession.prototype.postpone = function () {
         var ps = this;
-        return comm.sendCommand({method: "proof-command", params: [repeat("(postpone)", n)]})
+        return comm.sendCommand({method: "proof-command", params: ["(postpone)"]})
             .then(function (res) {
                 return ps.updateCurrentState(res);
             });
     };
-                  
+    
+    PVSSession.prototype.postponeUntil = function (targetId) {
+        var ps = this, currentlyActiveId = activeState.id;
+        function postpone() {
+            return comm.sendCommand({method: "proof-command", params: ["(postpone)"]})
+                .then(function (res) {
+                    if (res.jsonrpc_result.result.label === targetId || res.jsonrpc_result.result.label === currentlyActiveId) {
+                        return ps.updateCurrentState(res);
+                    } else {
+                        return postpone();
+                    }
+                });
+        }
+        if (targetId === currentlyActiveId) {
+            return Promise.resolve(true);
+        } else {
+            return postpone();
+        }
+    };
     
     module.exports = PVSSession;
 });
