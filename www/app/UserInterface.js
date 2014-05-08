@@ -91,7 +91,7 @@ define(function (require, exports, module) {
                 }).style("stroke", function (d, i) {
                     return d3.rgb(proofCommands.getColor(d.command)).darker();
                 }).on("click", function (d) {
-                    if (d.command === "(postpone)") {
+                    if (["(postpone)", "(undo)"].indexOf(d.command) > -1) {
                         session.sendCommand(proofCommand(d.command))
                             .then(function (res) {
                                 StatusLogger.log(res);
@@ -129,8 +129,7 @@ define(function (require, exports, module) {
                         .then(function () {
                             treeVis.addCommand(tData, d.command, d3.select(tEl.node().parentNode))
                                 .then(function (node) {
-                                    ghostNode.remove();
-                                    draggedCommand = null;
+                                   
                                     var numChildren = proofCommands.getMaxChildren(d.command);
                                     var pvsCommand = proofCommand(d.command);
                                     //The sendCommand is an asynchronous call to process a command on a branch of a proof tree
@@ -147,6 +146,8 @@ define(function (require, exports, module) {
                                 });
                         });
                 }
+                ghostNode.remove();
+                draggedCommand = null;
                 
             });
 

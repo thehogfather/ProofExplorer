@@ -26,10 +26,10 @@
     
     var httpServer = http.createServer(expressServer);
     //declare hosts and ports
-    var pvsHost = "130.107.98.189",// "192.168.1.100",
+    var pvsHost = "172.16.63.128",// "192.168.1.100",
         pvsPort = 22334,
         xmlRPCRequestPath = "/RPC2",
-        callbackHost = "130.107.98.54",//"192.168.1.98" ,
+        callbackHost = "172.16.63.1",//"192.168.1.98" ,
         callbackPort = 12346;
     
    

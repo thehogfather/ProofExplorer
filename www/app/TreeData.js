@@ -124,6 +124,10 @@ define(function (require, exports, module) {
         data = currentNode = root;
     }
     
+    TreeData.visitAll = function (f, node) {
+        visitAll(f, node);
+    };
+    
     TreeData.prototype.visitAll = function (f) {
         visitAll(f, data);
     };

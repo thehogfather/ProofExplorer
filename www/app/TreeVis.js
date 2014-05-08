@@ -201,6 +201,12 @@ define(function (require, exports, module) {
                 }).attr("class", function (d) {
                     return d._children ? "node collapsed" : d.active ? "node active" : "node";
                 });
+            //remove command nodes if any
+            updatedNodes.each(function (d, i) {
+                if (!d.command) {
+                    d3.select(this).select("circle.command").remove();
+                }
+            });
             
             var link = svg.selectAll(".link").data(links, function (d) {return d.target.id; });
             var enteredLinks = link.enter()
@@ -419,7 +425,7 @@ define(function (require, exports, module) {
         vis.initialise = function (session) {
             _session = session;
             session.addListener("statechanged", function (event) {
-                var data = event.tree.getData();
+                var data = event.tree.find(event.state.label) || event.tree.getData();
                 updateTree(data);
             }).addListener("stateunchanged", function (event) {
                 console.log(event);
