@@ -21,6 +21,7 @@ circle.ghost {
     opacity: 0.6;
     stroke-width: 3px;
     stroke-opacity: 1;
+    cursor: default;
 }
 
  .node circle.selected {
@@ -38,6 +39,7 @@ circle.ghost {
 .node circle{
     fill: #9da39d; 
     stroke: green;
+    z-index: 20;
 }
 
 .node circle.collapsed {
@@ -55,6 +57,18 @@ circle.ghost {
     display: none;
 }
 
+.node text {
+    alignment-baseline: text-after-edge;
+    text-anchor: start;
+}
+
+#proofTree .popover{
+    font-size: 10px;
+    width: 400px;
+    max-width: 500px;
+    z-index: 19;!important
+}
+
 .button text {
     alignment-baseline: text-before-edge;
     font-size: 10px;
@@ -69,5 +83,22 @@ path.active {
     stroke-dasharray: none;   
 }
 .sequent ul {
-    list-style: none;   
+    list-style: none; 
+    margin: 0;
+    padding: 0;
+}
+
+#toolbox {
+    width: 600px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.content {
+    width: 1600px;
+}
+
+#console .panel-body {
+    height: 150px;
+    overflow-y: scroll;
 }

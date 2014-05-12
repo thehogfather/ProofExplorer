@@ -14,7 +14,8 @@ define(function (require, exports, module) {
         TreeData = require("app/TreeData"),
         proofCommands = require("app/util/ProofCommands"),
         TreeGenerator = require("app/RandomTreeGenerator"),
-        StatusLogger = require("app/util/StatusLogger");
+        StatusLogger = require("app/util/StatusLogger"),
+        Tooltip = require("app/util/Tooltip");
     
     var vis = eventDispatcher({}), treeGeneratorCommand, _session;
     
@@ -63,7 +64,7 @@ define(function (require, exports, module) {
 //            d3.select(this).classed("selected", true);
                 
             if (!d.children) {
-                _session.postponeUntil(d.id)
+                _session.postponeUntil(d.name)
                     .then(function (res) {
                         StatusLogger.log(res);
                     });
@@ -76,6 +77,11 @@ define(function (require, exports, module) {
                 d3.select(this).attr("r", rad * 3).style("opacity", 0.5);
             }
             vis.fire({type: "mouseover.node", nodeData: d, nodeEl: d3.select(this)});
+            var mouse = d3.mouse(d3.select("body").node());
+            Tooltip.show(d, {x: mouse[0], y: mouse[1]});
+//            var opts = {html: true, content: Tooltip.html(d), container: "#proofTree"};
+//            $(this).popover(opts);
+//            $(this).popover("show");
         };
         
         onMouseOut = function (d) {
@@ -83,6 +89,8 @@ define(function (require, exports, module) {
                 .classed("collapsed", false);
             vis.fire({type: "mouseout.node", nodeData: d, nodeEl: d3.select(this)});
             targetNode = null;
+            //$(this).popover("hide");
+            Tooltip.hide();
         };
 
         function getSourceLinks(node) {
@@ -179,6 +187,7 @@ define(function (require, exports, module) {
                     var nodeCommand = d3.select(this).append("circle");
                     decorateCommandNode(nodeCommand);
                 }
+                
             });
             //append data nodes
             enteredNodes.append("circle")
@@ -190,7 +199,14 @@ define(function (require, exports, module) {
                 .on("mouseover", onMouseOver)
                 .on("mouseout", onMouseOut)
                 .on("click", onClick);
-            
+            //append labels to nodes
+            var labelXFunc = function (d) {return d.command ? rad * 2.2 : rad * 1.5; },
+                labelString = function (d) {
+                    return d.name && d.name.indexOf(".") > -1 ? d.name.substr(d.name.indexOf(".") + 1) : d.name;
+                };
+            enteredNodes.append("text")
+                .attr("x", labelXFunc).attr("y", 0)
+                .text(labelString);
             var exitedNodes = node.exit().transition().duration(duration)
                 .attr("transform", "translate(" + parent.x + " " + parent.y + ")")
                 .remove();
@@ -201,6 +217,8 @@ define(function (require, exports, module) {
                 }).attr("class", function (d) {
                     return d._children ? "node collapsed" : d.active ? "node active" : "node";
                 });
+            //update label pos
+            updatedNodes.select("text").attr("x", labelXFunc);
             //remove command nodes if any
             updatedNodes.each(function (d, i) {
                 if (!d.command) {
@@ -392,7 +410,6 @@ define(function (require, exports, module) {
         function bindKeys() {
             d3.select("body").on("keypress", function () {
                 var e = d3.event;
-                console.log(e.which);
                 switch (e.which) {
                 case 99://c was pressed so collapse selected node
                     d3.selectAll(".selected").each(function (d) {

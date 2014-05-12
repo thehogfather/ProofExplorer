@@ -1,0 +1,35 @@
+    <div class="popover-content">
+    {{#if data.sequent}}
+        <div class="sequent">
+            {{#if data.sequent.antecedents}}
+                <div class="antecedents">
+                    <h4>antecedents</h5>
+                    <div>
+                        <ul>
+                        {{#each data.sequent.antecedents}}
+                        <li> 
+                            {{cedent this}}
+                        </li>
+                        {{/each}}
+                        </ul>
+                    </div>
+                </div>
+            {{/if}}
+
+            {{#if data.sequent.succedents}}
+            <div class="succedents">
+                <h4>succedents</h5>
+                <div>
+                    <ul>
+                    {{#each data.sequent.succedents}}                
+                    <li>
+                        {{cedent this}}
+                    </li>
+                    {{/each}}
+                    </ul>
+                </div>
+            </div>
+            {{/if}}
+        </div>
+    {{/if}}
+    </div>

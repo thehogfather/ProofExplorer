@@ -58,22 +58,48 @@ define(function (require, exports, module) {
         return nodeCopy;
     }
     /**
-        Find the node with the give id
+        Find the node with the give id using breadth first strategy
     */
-    function find(nodeid, root) {
+    function find(nodeid, root, comparator) {
+        comparator = comparator || function (currentNode) { return nodeid === currentNode.id; };
         if (root) {
-            if (root.id === nodeid) {
+            if (comparator(root)) {
                 return root;
             } else if (root.children && root.children.length) {
                 var i, child, res;
                 for (i = 0; i < root.children.length; i++) {
                     child = root.children[i];
-                    res = find(nodeid, root.children[i]);
+                    res = find(nodeid, root.children[i], comparator);
                     //break out of loop if we have found it
                     if (res) {
                         return res;
                     }
                 }
+            }
+        }
+        return null;
+    }
+    
+    /**
+        Find the node with the give id using a depth first strategy
+    */
+    function findDFS(nodeid, root, comparator) {
+        comparator = comparator || function (currentNode) { return nodeid === currentNode.id; };
+        if (root) {
+            if (root.children && root.children.length) {
+                var i, child, res;
+                for (i = 0; i < root.children.length; i++) {
+                    child = root.children[i];
+                    res = findDFS(nodeid, root.children[i], comparator);
+                    //break out of loop if we have found it
+                    if (res) {
+                        return res;
+                    }
+                }
+            }
+            
+            if (comparator(root)) {
+                return root;
             }
         }
         return null;
@@ -136,8 +162,14 @@ define(function (require, exports, module) {
         return depth(data);
     };
     
-    TreeData.prototype.find = function (id) {
-        return find(id, data);
+    TreeData.prototype.find = function (id, subTree, f) {
+        subTree = subTree || data;
+        return find(id, subTree, f);
+    };
+    
+    TreeData.prototype.findDFS = function (id, subTree, f) {
+        subTree = subTree || data;
+        return findDFS(id, subTree, f);
     };
     
     TreeData.copyTree = function (node) {

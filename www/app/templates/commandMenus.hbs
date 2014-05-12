@@ -1,0 +1,14 @@
+<div>
+    {{#each this}}
+    <div class="btn-group">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+            {{label}} <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+            {{#each children}}
+            <li><a href="#">{{this}}</a></li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/each}}
+</div>

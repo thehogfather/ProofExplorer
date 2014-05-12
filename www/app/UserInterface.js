@@ -13,6 +13,8 @@ define(function (require, exports, module) {
         proofCommands = require("app/util/ProofCommands"),
         PVSSession = require("app/PVSSession"),
         StatusLogger = require("app/util/StatusLogger"),
+        CommandsMenu = require("app/CommandsMenu"),
+        Tooltip      = require("app/util/Tooltip"),
         nodeRad = 10;
 
     var commands = proofCommands.getCommands(),
@@ -26,6 +28,8 @@ define(function (require, exports, module) {
             nodeEl.attr("r", nodeRad * 3).style("opacity", 0.5);
             targetNodeEvent = event;
         }
+        //show tooltip
+        //$(event.nodeEl.node()).popover("show");
     }
     
     function onTreeNodeMouseOut(event) {
@@ -34,6 +38,7 @@ define(function (require, exports, module) {
             nodeEl.attr("r", nodeRad).style("opacity", null);
         }
         targetNodeEvent = null;
+        //$(event.nodeEl.node()).popover("hide");
     }
     
     function onTreeNodeClicked(event) {
@@ -49,18 +54,42 @@ define(function (require, exports, module) {
             .addListener("mouseout.node", onTreeNodeMouseOut)
             .addListener("click.node", onTreeNodeClicked);
         
+        function _sendCommand(command) {
+            if (command && command.trim().length) {
+                if (proofCommands.getCommands().indexOf(command) < 0) {
+                    proofCommands.getCommands().push(command);
+                }
+                treeVis.addCommand(session.getActiveState(), command);
+                session.sendCommand(proofCommand(command))
+                    .then(function (res) {
+                        console.log(res);
+                        StatusLogger.log(res);
+                    });
+            }
+            //clear the textbox
+            d3.select("#txtCommand").property("value", "");
+        }
         //add event for free text
         d3.select("#send").on("click", function () {
             var command = d3.select("#txtCommand").property("value");
-            session.sendCommand(proofCommand(command))
-                .then(function (res) {
-                    console.log(res);
-                    StatusLogger.log(res);
-                });
+            _sendCommand(command);
         });
+        d3.select("#txtCommand").on("keydown", function () {
+            if (d3.event.which === 13) {
+                _sendCommand(d3.select("#txtCommand").property("value"));
+            }
+        });
+        
+        //add listener for window resize so that the height of the components on the interface are properly redistributed
+        function windowResized(event) {
+            console.log(event);
+            var navControlHeight = $("#navControl").height(),
+                consoleHeight = $("#console").height();
+            $("#proofTree").height(window.outerHeight - navControlHeight - consoleHeight);
+        }
+        window.onresize = windowResized;
+        windowResized();
     }
-    
-  
     
     function createUI() {
         var pad = 20, iconRad = 15, w = (iconRad * 2  + pad) * commands.length, h = iconRad * 2, colors = d3.scale.category10();
@@ -107,14 +136,15 @@ define(function (require, exports, module) {
                 return d;
             });
             var ghostNode;
+
             drag.on("dragstart", function (d) {
                 ghostNode = tb.insert("circle", "g").attr("r", iconRad / 2)
                     .attr("cx", d3.event.sourceEvent.x)
                     .attr("cy", d3.event.sourceEvent.y)
                     .attr("class", "ghost")
                     .style("fill", proofCommands.getColor(d.command))
-                    .style("stroke", d3.rgb(proofCommands.getColor(d.command)).darker())
-                    .style("display", "none");
+                    .style("stroke", d3.rgb(proofCommands.getColor(d.command)).darker());
+                    //.style("display", "none");
                 draggedCommand = d;
                 d3.event.sourceEvent.stopPropagation();
             }).on("drag", function (d) {
@@ -129,19 +159,11 @@ define(function (require, exports, module) {
                         .then(function () {
                             treeVis.addCommand(tData, d.command, d3.select(tEl.node().parentNode))
                                 .then(function (node) {
-                                   
-                                    var numChildren = proofCommands.getMaxChildren(d.command);
                                     var pvsCommand = proofCommand(d.command);
                                     //The sendCommand is an asynchronous call to process a command on a branch of a proof tree
-                                    //it should resolve to an object containing {node: object, children: array}
                                     session.sendCommand(pvsCommand)
                                         .then(function (res) {
                                             StatusLogger.log(res);
-                                            
-            //                                var getTreeCommand = Promise.resolve({node: node, children: TreeGenerator.generateRandomChildren(numChildren)});
-            //                                //we send this command to the visual tree so that it can use the result to create the appropriate visual
-            //                                //representation once the Promise has been resolved
-            //                                treeVis.executeCommand(getTreeCommand);
                                         });
                                 });
                         });
@@ -167,6 +189,15 @@ define(function (require, exports, module) {
             treeVis.render(event.tree);
             treeVis.initialise(session);
             createControls();
+            CommandsMenu.create(session)
+                .on("commandclicked", function (command) {
+                    treeVis.addCommand(session.getActiveState(), command);
+                    session.sendCommand(proofCommand(command))
+                        .then(function (res) {
+                            console.log(res);
+                            StatusLogger.log(res);
+                        });
+                });
         });
         
         bindEvents();

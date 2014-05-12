@@ -52,6 +52,11 @@
         socket.send(JSON.stringify({id: data.id, response: data, type: "interactive"}));
     }
     
+     ///define websocket handlers
+    function processCallback(token, socket) {
+        socket.send(JSON.stringify(token));
+    }
+    
     server.on("request", function (err, params, callback) {
         if (err) {
             logger.log("error");
@@ -68,6 +73,8 @@
                     break;
                 default:
                     logger.log(data);
+                    data.type = data.method;
+                    processCallback(data, clientSocket);
                     callback(null);
                 }
             } else {
@@ -93,10 +100,7 @@
         return p;
     }
     
-    ///define websocket handlers
-    function processCallback(token, socket) {
-        socket.send(JSON.stringify(token));
-    }
+   
     
     function clientWebSocketFunctions() {
         return {

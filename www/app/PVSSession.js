@@ -14,18 +14,63 @@ define(function (require, exports, module) {
     var currentState, proofTree, allStates, ps, activeState;
    
     /**
+    Currently this is a hack to detect uniqueness between states returned from the pvs server
+    This function should be replaced immediately Sam updates the API with a field that denotes the sequent number
+    */
+    function sequentString(state) {
+        var antecedents = (state.sequent && state.sequent.antecedents) || [],
+            succedents = (state.sequent && state.sequent.succedents) || [];
+        return antecedents.map(function (d) {return d.formula; }).join("").concat(succedents.map(function (d) {return d.formula; }).join(""));
+    }
+
+    function anySequentChanged(state) {
+        var antecedents = (state.sequent && state.sequent.antecedents) || [],
+            succedents = (state.sequent && state.sequent.succedents) || [];
+        return antecedents.some(function (d) {
+            return d.changed === "true";
+        }) || succedents.some(function (d) {
+            return d.changed === "true";
+        });
+    }
+    
+    function nodeSearch(nodeid) {
+        return function (node) {
+            return nodeid === node.id || nodeid === node.name;
+        };
+    }
+    /**
         sets the active node in the tree
     */
-    function setActiveNode(state, tree) {
+    function setActiveNode(stateid, tree) {
         //only one active node is allowed on the tree
         tree.visitAll(function (node) {
             node.active = null;
         });
-        var node = tree.find(state.label);
+        var node = tree.findDFS(stateid, null, nodeSearch(stateid));
         if (node) {
             node.active = true;
             activeState = node;
+            activeState.data = currentState;
+            if (!activeState.formula) {
+                activeState.formula = sequentString(currentState);
+            }
         }
+    }
+    
+    function isChild(child, parent) {
+        return parent !== child && child.indexOf(parent) === 0;
+    }
+    
+    function isParent(parent, child) {
+        return parent !== child && child.indexOf(parent) === 0;
+    }
+    
+    function levelUp(s) {
+        return s.substring(0, s.lastIndexOf("."));
+    }
+    
+    function areSiblings(child1, child2) {
+        return levelUp(child1) === levelUp(child2);
     }
     
     /**
@@ -37,27 +82,11 @@ define(function (require, exports, module) {
         If this is the case, we need to clear the children of the current node
     */
     function updateTree(tree, oldState, newState) {
-        var children, i, numSubgoals, id, newStateIndex, parent, state;
-        if (oldState && newState.label !== oldState.label && newState.label.indexOf(oldState.label) === 0) {//new state is a child of oldstate
-            if (!allStates[newState.label]) {
-                //create all the subgoal children 
-                children = [];
-                numSubgoals = newState["num-subgoals"];
-                for (i = 1; i <= numSubgoals; i++) {
-                    id = oldState.label + "." + i;
-                    children.push({id: id, name: id});
-                }
-                //add generated children to tree
-                parent = tree.find(oldState.label);
-                if (parent) {
-                    parent.children = children;
-                } else {console.log("could not find parent"); }
-            }
-            //so we have seen this state before or at least we have created a node for it so just update the node status
-            //probably just done a postpone
-            setActiveNode(newState, tree);
-        } else if (oldState && oldState.label !== newState.label && oldState.label.indexOf(newState.label) === 0) {//new state is a parent of oldstate
-            state = tree.find(newState.label);
+       
+        var children, i, numSubgoals, id, newStateIndex, parent, state, childState;
+        
+        function removeChildren(stateName) {
+            var state = tree.findDFS(stateName, null, nodeSearch(stateName));
             if (state) {
                 //visit the nodes and descendants and remove them from allSates
                 TreeData.visitAll(function (node) {
@@ -66,21 +95,59 @@ define(function (require, exports, module) {
                 delete state.children;
                 delete state.command;
             }
-            setActiveNode(newState, tree);
-        } else if (oldState && oldState.label === newState.label) {
-            //create a branch anyway to show that a command has been added to the parent
-            state = tree.find(oldState.label);
-            if (state) {
-                state.id = state.id + ".0";
-                state.children = [{id: newState.label, name: newState.label}];
+            return state;
+        }
+        
+        if (oldState && isChild(newState.label, oldState.label)) {//new state is a child of oldstate
+            if (!allStates[newState.label]) {
+                //create all the subgoal children 
+                children = [];
+                numSubgoals = newState["num-subgoals"];
+                for (i = 1; i <= numSubgoals; i++) {
+                    id = oldState.label + "." + i;
+                    childState = {id: id, name: id};
+                    children.push(childState);
+                }
+                //add generated children to tree
+                parent = tree.findDFS(oldState.label, null, nodeSearch(oldState.label));
+                if (parent) {
+                    parent.children = children;
+                } else {console.log("could not find parent"); }
             }
-            setActiveNode(newState, tree);
+            //so we have seen this state before or at least we have created a node for it so just update the node status
+            //probably just done a postpone
+            setActiveNode(newState.label, tree);
+        } else if (oldState && isParent(newState.label, oldState.label)) {//new state is a parent of oldstate 
+            removeChildren(newState.label);
+            setActiveNode(newState.label, tree);
+        } else if (oldState && oldState.label === newState.label) {
+            //if any of the sequents in the new state are marked as changed then
+            //create a branch anyway to show that a command has been added to the parent
+            state = tree.findDFS(newState.label, null, function (node) {
+                return node.formula ? node.formula === sequentString(newState) && node.name === newState.label
+                    : node.name === newState.label;
+            });
+            if (state) {
+                delete state.children;
+                delete state.command;
+                setActiveNode(state.name, tree);
+            } else {
+                state = tree.findDFS(newState.label, null, nodeSearch(newState.label));
+                if (state) {
+                    childState = {id: state.id + ".0", name: state.name};
+                    state.children = [childState];
+                    setActiveNode(childState.name, tree);
+                } else {
+                    throw new Error("state not found!");
+                }
+            }
         } else {
             //new state is not a descendant so maybe we have just done postpones
-            setActiveNode(newState, tree);
+            setActiveNode(newState.label, tree);
         }
     }
     /**
+     Checks whether or not the state is unchanged.
      The state is unchanged iff any one of the conditions below hold
         1. it is explicitly set in the commentary that it is unchanged
         2. it is a postponed state
@@ -135,12 +202,11 @@ define(function (require, exports, module) {
                 currentState = res.jsonrpc_result.result;
                 allStates[currentState.label] = new Date().getTime();
                 proofTree = new TreeData({id: currentState.label, name: currentState.label});
-                setActiveNode(currentState, proofTree);
+                setActiveNode(currentState.label, proofTree);
                 ps.fire({type: "treecreated", tree: proofTree});
                 return Promise.resolve(res);
             });
     };
-    
     
     PVSSession.prototype.sendCommand = function (command) {
         var ps = this;
@@ -158,23 +224,28 @@ define(function (require, exports, module) {
             });
     };
     
-    PVSSession.prototype.postponeUntil = function (targetId) {
-        var ps = this, currentlyActiveId = activeState.id;
+    PVSSession.prototype.postponeUntil = function (targetName) {
+        var ps = this, currentlyActiveName = activeState.name;
         function postpone() {
             return comm.sendCommand({method: "proof-command", params: ["(postpone)"]})
                 .then(function (res) {
-                    if (res.jsonrpc_result.result.label === targetId || res.jsonrpc_result.result.label === currentlyActiveId) {
+                    if (res.jsonrpc_result.result.label === targetName
+                            || res.jsonrpc_result.result.label === currentlyActiveName) {
                         return ps.updateCurrentState(res);
                     } else {
                         return postpone();
                     }
                 });
         }
-        if (targetId === currentlyActiveId) {
+        if (targetName === currentlyActiveName) {
             return Promise.resolve(true);
         } else {
             return postpone();
         }
+    };
+    
+    PVSSession.prototype.getActiveState = function () {
+        return activeState;
     };
     
     module.exports = PVSSession;

@@ -16,7 +16,7 @@ define(function (require, exports, module) {
     Handlebars.registerHelper("cedent", function (obj) {
         var open = obj.changed  === "true" ? "{" : "[",
             close = obj.changed === "true" ? "}" : "]";
-        var str = "{0}{2}{1}: {3}".format(open, close, obj.labels[0], obj.formula); 
+        var str = "{0}{2}{1}: {3}".format(open, close, obj.labels[0], obj.formula);
         return str;
     });
     

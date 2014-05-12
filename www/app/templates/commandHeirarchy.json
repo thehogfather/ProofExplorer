@@ -1,0 +1,10 @@
+{
+    "navigation": ["(postpone)", "(quit)", "(undo)"],
+    "structural rules": ["(hide fnums)", "(hide-all-but fnums)", "(reveal fnums)"],
+    "annotation": ["(label \"string\" fnums)", "(unlabel fnum)", "(comment \"string\")"],
+    "propositional": ["(split)", "(case \"expr\")", "(lift-if)"],
+    "quantifier": ["(skosimp*)", "(skeep)", "(inst? fnum :subst(\"old_expr\" \"new_expr\"))"],
+    "equality and extensionality": ["(beta)", "(apply-extensionality)", "(name-replace \"string\" \"expr\")", "(replace* fnums)"],
+    "definitions, lemmas and type constraints": ["(expand \"expr\")", "(lemma \"lemma_name\")", "(typepred \"expr\")", "(all-typepreds)"],
+    "simplification": ["(assert)", "(grind)"]
+}
