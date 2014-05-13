@@ -12,40 +12,48 @@
     </head>
     <body>
         <div class="container-fluid center-block">
-            
-            <div class="row" id="navControl">
-                <div id="menubar"></div>
-                <div id="toolbox" class="input-group">
-                    <input type="text" id="txtCommand" class="form-control" placeholder="PVS command here"/>
-                    <span id="send" class="input-group-addon">Send</span>
-                </div>
-            </div>
             <div class="row">
-                <div id="proofTree" class="col-md-8"></div>
-                <div  class="col-md-4">
+                <div class="col-md-2">
+                    <div id="toolPalette">
+                        
+                    </div>
+                </div>
+                <div class="col-md-10">
+                    <div class="row" id="navControl">
+                        <div id="menubar"></div>
+                        <div id="toolbox" class="input-group">
+                            <input type="text" id="txtCommand" class="form-control" placeholder="Enter PVS command here"/>
+                            <span id="send" class="input-group-addon">Send</span>
+                        </div>
+                    </div>
                     <div class="row">
-                        <div id="status"></div>
-                    </div>
-                   
-                </div>
-            </div>
-           <div class="row">
-                <div id="console">
-                    <div class="panel panel-info">
-                        <div class="panel-heading">
-                            <h4 class="panel-title"><a href="#consoleBody" data-toggle="collapse">Console</a></h4>
-                        </div>
-                        <div id="consoleBody" class="panel-collapse collapse">
-                        <div class="panel-body">
-                            <ul id="console-list" class="list-group">
+                        <div id="proofTree" class="col-md-8"></div>
+                        <div  class="col-md-4">
+                            <div class="row">
+                                <div id="status"></div>
+                            </div>
 
-                            </ul>
                         </div>
+                    </div>
+                   <div class="row">
+                        <div id="console">
+                            <div class="panel panel-info">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title"><a href="#consoleBody" data-toggle="collapse">Console</a></h4>
+                                </div>
+                                <div id="consoleBody" class="panel-collapse collapse">
+                                <div class="panel-body">
+                                    <ul id="console-list" class="list-group">
+
+                                    </ul>
+                                </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
-        </div>
-        <div id="tooltip"></div>
+            
     </body>
 </html>

@@ -1,4 +1,5 @@
-    <div class="popover-content">
+    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button> 
+    <h3>{{data.label}}</h3>
     {{#if data.sequent}}
         <div class="sequent">
             {{#if data.sequent.antecedents}}
@@ -32,4 +33,3 @@
             {{/if}}
         </div>
     {{/if}}
-    </div>

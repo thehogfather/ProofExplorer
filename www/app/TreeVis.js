@@ -17,8 +17,11 @@ define(function (require, exports, module) {
         StatusLogger = require("app/util/StatusLogger"),
         Tooltip = require("app/util/Tooltip");
     
-    var vis = eventDispatcher({}), treeGeneratorCommand, _session;
+    var vis = eventDispatcher({}), commandRunner, _session;
     
+    function triangle(size) {
+        return "M0 0l-" + (size / 2) + " " + size + "h" + size + "Z";
+    }
     
     function render(treeData) {
         var targetNode, draggedNode, drag;
@@ -51,6 +54,32 @@ define(function (require, exports, module) {
         
         var toggleCollapse, onMouseOver, onMouseOut, onMouseDown, addCommand, onClick;
        
+        var nodePointerG = svg.append("g").attr("class", "node-pointer");
+        var nodePointer = nodePointerG.append("path").attr("d", triangle(rad * 2));
+        
+        var pointerDrag = d3.behavior.drag(), startPointerPos, pointerDragging, initialPointerTransform;
+        pointerDrag.on("dragstart", function () {
+            var pos = d3.mouse(nodePointerG.node());
+            initialPointerTransform = nodePointerG.attr("transform");
+            startPointerPos = {x: pos[0], y: pos[1]};
+            d3.event.sourceEvent.stopPropagation();
+            pointerDragging = true;
+        }).on("drag", function () {
+            var event = d3.event;
+            nodePointerG.attr("transform",
+                              "translate(" + (event.x + startPointerPos.x) + " " + (event.y - startPointerPos.y) + ")");
+            console.log(event);
+        }).on("dragend", function () {
+            pointerDragging = false;
+            if (targetNode) {
+                vis.fire({type: "postpone", command: "(postpone)", targetNode: targetNode});
+                nodePointerG.attr("transform", "translate(" + targetNode.x + " " + (targetNode.y + (targetNode.command ? rad * 2 : rad)) + ")");
+            } else {
+                //return to old position
+                nodePointerG.attr("transform", initialPointerTransform);
+            }
+        });
+        nodePointerG.call(pointerDrag);
         onClick = function (d) {
             vis.fire({type: "click.node", nodeData: d, nodeEl: d3.select(this)});
         };
@@ -58,30 +87,16 @@ define(function (require, exports, module) {
         onMouseDown = function (d) {
             d3.event.preventDefault();
             d3.event.stopPropagation();
-//            if (!d3.event.shiftKey) {//deselect previous selections if shift wasnt pressed
-//                d3.selectAll(".selected").classed("selected", false);
-//            }
-//            d3.select(this).classed("selected", true);
-                
-            if (!d.children) {
-                _session.postponeUntil(d.name)
-                    .then(function (res) {
-                        StatusLogger.log(res);
-                    });
-            }
+            var mouse = d3.mouse(d3.select("body").node());
+            Tooltip.show(d, {x: mouse[0], y: mouse[1]});
         };
         
         onMouseOver = function (d) {
-            if (draggedNode && draggedNode !== d) {
+            if ((draggedNode && draggedNode !== d) || pointerDragging) {
                 targetNode = d;
                 d3.select(this).attr("r", rad * 3).style("opacity", 0.5);
             }
             vis.fire({type: "mouseover.node", nodeData: d, nodeEl: d3.select(this)});
-            var mouse = d3.mouse(d3.select("body").node());
-            Tooltip.show(d, {x: mouse[0], y: mouse[1]});
-//            var opts = {html: true, content: Tooltip.html(d), container: "#proofTree"};
-//            $(this).popover(opts);
-//            $(this).popover("show");
         };
         
         onMouseOut = function (d) {
@@ -89,8 +104,6 @@ define(function (require, exports, module) {
                 .classed("collapsed", false);
             vis.fire({type: "mouseout.node", nodeData: d, nodeEl: d3.select(this)});
             targetNode = null;
-            //$(this).popover("hide");
-            Tooltip.hide();
         };
 
         function getSourceLinks(node) {
@@ -207,6 +220,7 @@ define(function (require, exports, module) {
             enteredNodes.append("text")
                 .attr("x", labelXFunc).attr("y", 0)
                 .text(labelString);
+            
             var exitedNodes = node.exit().transition().duration(duration)
                 .attr("transform", "translate(" + parent.x + " " + parent.y + ")")
                 .remove();
@@ -219,10 +233,13 @@ define(function (require, exports, module) {
                 });
             //update label pos
             updatedNodes.select("text").attr("x", labelXFunc);
-            //remove command nodes if any
+            //remove command nodes if any and update the node pointer position
             updatedNodes.each(function (d, i) {
                 if (!d.command) {
                     d3.select(this).select("circle.command").remove();
+                }
+                if (d.active) {
+                    nodePointerG.attr("transform", "translate(" + d.x + " " + (d.y + (d.command ? rad * 2 : rad)) + ")");
                 }
             });
             
@@ -324,26 +341,26 @@ define(function (require, exports, module) {
         }
         
         /**
-            Copies a command from source node to target node and runs the treeGenCommand function
-            which should resolve with data of form {node:{}, children:[]}
+            Copies a command from source node to target node and runs the commandRunner function
+            which should essentially update the target node with any new children
         */
-        function copyCommand(source, target, treeGenCommand) {
+        function copyCommand(source, target, commandRunner) {
             //sequence is to add command to tree node
             //then to execute that command on the server for that node
             //question is how we make sure the server has the right state
             return addCommand(target, source.command)
-                .then(function (node) {
-                    return executeCommand(treeGenCommand(node));
+                .then(function (target) {
+                    return commandRunner(target, target.command);
                 })
                 .then(function (res) {
-                    var node = res.node, newChildren = res.children;
+                    var node = target, newChildren = target.children;
                     //if the target is already a child of the source we need to filter it out
                     var childCommands = source.children.filter(function (d) {
                         return d.id !== target.id;
                     }), promises;
                     if (childCommands && childCommands.length) {
                         promises = childCommands.map(function (cc, cindex) {
-                            return cc.command ? copyCommand(cc, newChildren[cindex], treeGenCommand)
+                            return cc.command ? copyCommand(cc, newChildren[cindex], commandRunner)
                                 : Promise.reject("no command");
                         });
                         //try to resolve all the promises
@@ -360,7 +377,7 @@ define(function (require, exports, module) {
             drag.on("dragstart", function (d) {
                 pos = [d3.event.sourceEvent.x, d3.event.sourceEvent.y];
                 draggedNode = d;
-                ghostNode = svg.insert("circle", "path")
+                ghostNode = svg.insert("circle", "g")
                     .attr("cx", pos[0])
                     .attr("cy", pos[1])
                     .attr("r", rad * 2).style("display", "none")
@@ -377,15 +394,12 @@ define(function (require, exports, module) {
             }).on("dragend", function (d) {
                 var tx = draggedNode.x, ty = draggedNode.y;
                 if (targetNode) {
-                    //create children property if there is currently none
-                    if (!targetNode.children) {
-                        targetNode.children = targetNode._children || [];
-                    }
                     //TODO copy command to target node but first check if the current command is the active node and 
                     //make sure it is active before excuting the command on it
-                    copyCommand(TreeData.copyTree(d), targetNode, treeGeneratorCommand || function (node) {
-                        var numChildren = proofCommands.getMaxChildren(node.command);
-                        return Promise.resolve({node: node, children: TreeGenerator.generateRandomChildren(numChildren)});
+                    copyCommand(TreeData.copyTree(d), targetNode, commandRunner || function (node, command) {
+                        var numChildren = proofCommands.getMaxChildren(command);
+                        node.children = TreeGenerator.generateRandomChildren(numChildren);
+                        return Promise.resolve(node);
                     }).then(function (res) {
                         console.log(res);
                     });
@@ -435,8 +449,8 @@ define(function (require, exports, module) {
         vis.appendChildren = appendChildren;
         vis.executeCommand = executeCommand;
         
-        vis.registerTreeGeneratorCommand = function (d) {
-            treeGeneratorCommand = d;
+        vis.registerCommandRunner = function (d) {
+            commandRunner = d;
         };
         
         vis.initialise = function (session) {

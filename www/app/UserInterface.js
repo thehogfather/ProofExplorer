@@ -14,6 +14,7 @@ define(function (require, exports, module) {
         PVSSession = require("app/PVSSession"),
         StatusLogger = require("app/util/StatusLogger"),
         CommandsMenu = require("app/CommandsMenu"),
+        ToolPalette  = require("app/ToolPalette"),
         Tooltip      = require("app/util/Tooltip"),
         nodeRad = 10;
 
@@ -28,8 +29,6 @@ define(function (require, exports, module) {
             nodeEl.attr("r", nodeRad * 3).style("opacity", 0.5);
             targetNodeEvent = event;
         }
-        //show tooltip
-        //$(event.nodeEl.node()).popover("show");
     }
     
     function onTreeNodeMouseOut(event) {
@@ -38,7 +37,6 @@ define(function (require, exports, module) {
             nodeEl.attr("r", nodeRad).style("opacity", null);
         }
         targetNodeEvent = null;
-        //$(event.nodeEl.node()).popover("hide");
     }
     
     function onTreeNodeClicked(event) {
@@ -50,25 +48,36 @@ define(function (require, exports, module) {
     }
     
     function bindEvents() {
-        treeVis.addListener("mouseover.node", onTreeNodeMouseOver)
-            .addListener("mouseout.node", onTreeNodeMouseOut)
-            .addListener("click.node", onTreeNodeClicked);
         
-        function _sendCommand(command) {
+        function processCommand(command) {
             if (command && command.trim().length) {
                 if (proofCommands.getCommands().indexOf(command) < 0) {
                     proofCommands.getCommands().push(command);
                 }
-                treeVis.addCommand(session.getActiveState(), command);
+                if (command !== "(postpone)" || command !== "(undo)") {
+                    treeVis.addCommand(session.getActiveState(), command);
+                }
                 session.sendCommand(proofCommand(command))
                     .then(function (res) {
                         console.log(res);
                         StatusLogger.log(res);
                     });
             }
+        }
+        
+        function _sendCommand(command) {
+            processCommand(command);
             //clear the textbox
             d3.select("#txtCommand").property("value", "");
         }
+        
+        treeVis.addListener("mouseover.node", onTreeNodeMouseOver)
+            .addListener("mouseout.node", onTreeNodeMouseOut)
+            .addListener("click.node", onTreeNodeClicked)
+            .addListener("postpone", function (event) {
+                session.postponeUntil(event.targetNode.id);
+            });
+        
         //add event for free text
         d3.select("#send").on("click", function () {
             var command = d3.select("#txtCommand").property("value");
@@ -157,15 +166,17 @@ define(function (require, exports, module) {
                         tEl = targetNodeEvent.nodeEl;
                     session.postponeUntil(targetNodeEvent.nodeData.id)
                         .then(function () {
-                            treeVis.addCommand(tData, d.command, d3.select(tEl.node().parentNode))
-                                .then(function (node) {
-                                    var pvsCommand = proofCommand(d.command);
-                                    //The sendCommand is an asynchronous call to process a command on a branch of a proof tree
-                                    session.sendCommand(pvsCommand)
-                                        .then(function (res) {
-                                            StatusLogger.log(res);
-                                        });
-                                });
+                            if (d.command !== "(postpone)") {
+                                treeVis.addCommand(tData, d.command, d3.select(tEl.node().parentNode))
+                                    .then(function (node) {
+                                        var pvsCommand = proofCommand(d.command);
+                                        //The sendCommand is an asynchronous call to process a command on a branch of a proof tree
+                                        session.sendCommand(pvsCommand)
+                                            .then(function (res) {
+                                                StatusLogger.log(res);
+                                            });
+                                    });
+                            }
                         });
                 }
                 ghostNode.remove();
@@ -187,7 +198,9 @@ define(function (require, exports, module) {
         
         session.addListener("treecreated", function (event) {
             treeVis.render(event.tree);
+            ToolPalette.create();
             treeVis.initialise(session);
+            
             createControls();
             CommandsMenu.create(session)
                 .on("commandclicked", function (command) {
@@ -198,6 +211,13 @@ define(function (require, exports, module) {
                             StatusLogger.log(res);
                         });
                 });
+            
+            treeVis.registerCommandRunner(function (node, command) {
+                return session.postponeUntil(node.id)
+                    .then(function (res) {
+                        return session.sendCommand(proofCommand(command));
+                    });
+            });
         });
         
         bindEvents();

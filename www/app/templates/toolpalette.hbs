@@ -1,0 +1,16 @@
+<div class="panel-group" id="toolbox-palette">
+    {{#each this}}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <a data-toggle="collapse" class="collapsed" href="#{{id}}">{{label}}</a>
+        </div>
+        <div class="panel-collapse collapse in" id="{{id}}">
+            <div class="panel-body">
+                {{#each children}}
+                <span class="label label-default">{{this}}</span>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+    {{/each}}
+</div>
