@@ -99,9 +99,7 @@
         
         return p;
     }
-    
-   
-    
+        
     function clientWebSocketFunctions() {
         return {
             "PVSRequest": function (token, socket, socketid) {

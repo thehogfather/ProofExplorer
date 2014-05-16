@@ -1,35 +1,37 @@
-    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button> 
-    <h3>{{data.label}}</h3>
-    {{#if data.sequent}}
-        <div class="sequent">
-            {{#if data.sequent.antecedents}}
-                <div class="antecedents">
-                    <h4>antecedents</h5>
-                    <div>
-                        <ul>
-                        {{#each data.sequent.antecedents}}
-                        <li> 
-                            {{cedent this}}
-                        </li>
-                        {{/each}}
-                        </ul>
+<!--    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button> -->
+    {{#if source}}
+        <h6>{{source.command}}</h6>
+    {{else}}
+    <h6>{{data.label}}</h6>
+        {{#if data.sequent}}
+            <div class="sequent">
+                {{#if data.sequent.antecedents}}
+                    <div class="antecedents">
+                        <strong>antecedents</strong>
+                        <div>
+                            {{#each data.sequent.antecedents}}
+                            <div> 
+                                <span>{{sequentLabel this}}</span>
+                                <pre class="formula" tabindex='0'>{{formula}}</pre>
+                            </div>
+                            {{/each}}
+                        </div>
                     </div>
-                </div>
-            {{/if}}
+                {{/if}}
 
-            {{#if data.sequent.succedents}}
-            <div class="succedents">
-                <h4>succedents</h5>
-                <div>
-                    <ul>
-                    {{#each data.sequent.succedents}}                
-                    <li>
-                        {{cedent this}}
-                    </li>
-                    {{/each}}
-                    </ul>
-                </div>
+                {{#if data.sequent.succedents}}
+                    <div class="succedents">
+                        <strong>succedents</strong>
+                        <div>
+                            {{#each data.sequent.succedents}}                
+                            <div> 
+                                <span>{{sequentLabel this}}</span>
+                                <pre class="formula" readonly>{{formula}}</pre>
+                            </div>
+                            {{/each}}
+                        </div>
+                    </div>
+                {{/if}}
             </div>
-            {{/if}}
-        </div>
+        {{/if}}
     {{/if}}

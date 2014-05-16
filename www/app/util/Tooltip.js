@@ -21,28 +21,23 @@ define(function (require, exports, module) {
             //adjust x and y based on cursor position relative to the screen
             pos.x = pos.x + 20;
             this.$el.html(html);
-            this.$el.addClass("alert fade in alert-dismissable alert-tooltip");
+            this.$el.addClass("alert-tooltip");
             this.$el.css({
                 "top": pos.y + "px",
                 "left": pos.x + "px",
                 "position": "absolute",
-                "display": "block"
+                "display": "block",
+                "z-index": 4
             });
             $("body").append(this.$el);
             return this;
         },
-        hide: function () {
-            this.remove();
+        events: {
+            "onblur pre.formula" :"focusout"
+        },
+        focusout: function (event) {
+            event.preventDefault();
         }
     });
-    var instance;// = new TooltipView();
-    module.exports = {
-        show: function (obj, pos) {
-            instance = new TooltipView();
-            instance.render(obj, pos);
-        },
-        hide: function () {
-            instance.hide();
-        }
-    };
+    module.exports = TooltipView;
 });

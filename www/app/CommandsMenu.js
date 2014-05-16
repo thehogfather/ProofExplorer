@@ -11,13 +11,15 @@ define(function (require, exports, module) {
     var commandsMap = require("text!app/templates/commandHeirarchy.json"),
         template = require("text!app/templates/commandMenus.hbs"),
         d3 = require("d3"),
-        StatusLogger = require("app/util/StatusLogger"),
         Backbone = require("backbone");
     
-    var session;
     function parseCommands(str) {
         var commands = JSON.parse(str);
         var json = Object.keys(commands).map(function (name) {
+            var children = commands[name];
+            children.forEach(function (d) {
+               d.icon = d.icon || "unchecked"; 
+            });
             return {label: name, children: commands[name]};
         });
         return json;
@@ -38,19 +40,15 @@ define(function (require, exports, module) {
             "click li": "commandClicked"
         },
         commandClicked: function (event) {
-            this.trigger("commandclicked", event.target.innerHTML);
-        },
-        sendCommand: function (event) {
-            session.sendCommand(event.target.innerHTML)
-                .then(function (res) {
-                    StatusLogger.log(res);
-                });
+            var t = event.currentTarget;
+            if (t.nodeName.toLowerCase() === "li") {
+                this.trigger("commandclicked", t.innerText, t.title);
+            }
         }
     });
     
     module.exports = {
         create: function (_session) {
-            session = _session;
             var model = parseCommands(commandsMap);
             return new CommandsMenuView(model);
         }

@@ -43,7 +43,7 @@ define(function (require, exports, module) {
             .attr("height", h + margin.bottom + margin.top)
             .call(zoom).on("dblclick.zoom", null);
         
-        board.append("rect").attr("width", w).attr("height", h).attr("fill", "white");
+        //board.append("rect").attr("width", w).attr("height", h).attr("fill", "white");
         
         svg = board.attr("pointer-events", "all")
             .append("g").attr("transform", "translate(" + margin.left + " " + margin.top + ")");
@@ -63,6 +63,8 @@ define(function (require, exports, module) {
             initialPointerTransform = nodePointerG.attr("transform");
             startPointerPos = {x: pos[0], y: pos[1]};
             d3.event.sourceEvent.stopPropagation();
+            //put pointer behind all nodes
+            svg.node().insertBefore(nodePointerG.node(), d3.select("path").node());
             pointerDragging = true;
         }).on("drag", function () {
             var event = d3.event;
@@ -78,6 +80,7 @@ define(function (require, exports, module) {
                 //return to old position
                 nodePointerG.attr("transform", initialPointerTransform);
             }
+            svg.node().appendChild(nodePointerG.node());
         });
         nodePointerG.call(pointerDrag);
         onClick = function (d) {
@@ -88,20 +91,25 @@ define(function (require, exports, module) {
             d3.event.preventDefault();
             d3.event.stopPropagation();
             var mouse = d3.mouse(d3.select("body").node());
-            Tooltip.show(d, {x: mouse[0], y: mouse[1]});
+            if (!d.tooltip) {
+                d.tooltip = new Tooltip().render(d, {x: mouse[0], y: mouse[1]});
+            } else {
+                d.tooltip.remove();
+                delete d.tooltip;
+            }
         };
         
         onMouseOver = function (d) {
             if ((draggedNode && draggedNode !== d) || pointerDragging) {
                 targetNode = d;
-                d3.select(this).attr("r", rad * 3).style("opacity", 0.5);
+                d3.select(this).style("fill", "orange")
+                    .style("opacity", 0.5);
             }
             vis.fire({type: "mouseover.node", nodeData: d, nodeEl: d3.select(this)});
         };
         
         onMouseOut = function (d) {
-            d3.select(this).attr("r", rad).style("opacity", null)
-                .classed("collapsed", false);
+            d3.select(this).style("fill", "none");
             vis.fire({type: "mouseout.node", nodeData: d, nodeEl: d3.select(this)});
             targetNode = null;
         };
@@ -159,6 +167,11 @@ define(function (require, exports, module) {
             });
         }
         
+        function commandLabel(command) {
+            var args = command.replace(/[()]/g, "").split(" ");
+            return args[0];
+        }
+        
         function decorateCommandNode(el) {
             el.attr("class", "command")
                 .style("fill", function (d) {
@@ -170,24 +183,36 @@ define(function (require, exports, module) {
                 .attr("r", rad * 2).on("mousedown", function () {
                     d3.event.stopPropagation();
                 }).call(drag);
+            var p = d3.select(el.node().parentNode);
+            p.select("g.icon").remove();
+            p.append("g").attr("class", "icon")
+                .append("svg:foreignObject")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", "40px")
+                .attr("height", "40px")
+                .append("xhtml:div").attr("xmlns", "http://www.w3.org/1999/xhtml")
+                .append("xhtml:img").attr("src", function (d) {
+                    return "css/glyphicons/png/glyphicons_" + proofCommands.getIcon(commandLabel(d.command)) + ".png";
+                });
             return el;
         }
         
         function updateTree(parent) {
             var duration = 500;
             var maxDepth = treeData.depth();
-            h = levelHeight * maxDepth;
+            h = Math.max(500, levelHeight * maxDepth);
             el.select("svg").attr("width", w + margin.left + margin.right).attr("height", h + margin.top + margin.bottom);
             tree.size([w, h]);
             var nodes = tree.nodes(treeData.getData()),
                 links = tree.links(nodes);
             
-            var node = svg.selectAll(".node")
+            var node = svg.selectAll("g.node")
                 .data(nodes, function (d) {
                     return d.id;
                 });
             var enteredNodes = node.enter()
-                .append("g").attr("class", "node")
+                .insert("g", "g.node-pointer").attr("class", "node")
                 .attr("transform", function (d) {
                     var x0 = parent.x0 || d.x, y0 = parent.y0 || d.y;
                     return "translate(" + x0 + " " + y0 + ")";
@@ -203,15 +228,22 @@ define(function (require, exports, module) {
                 
             });
             //append data nodes
+           
             enteredNodes.append("circle")
+                .attr("class", "state")
                 .attr("r", function (d) {
                     return d._children ? rad * 1.5 : rad;
-                })
-                .on("dblclick", toggleCollapse)
-                .on("mousedown", onMouseDown)
+                });
+             
+            enteredNodes.append("circle")
+                .attr("class", "eventreceiver")
+                .attr("r", rad * 3)
                 .on("mouseover", onMouseOver)
                 .on("mouseout", onMouseOut)
+//                .on("dblclick", toggleCollapse)
+                .on("mousedown", onMouseDown)
                 .on("click", onClick);
+            
             //append labels to nodes
             var labelXFunc = function (d) {return d.command ? rad * 2.2 : rad * 1.5; },
                 labelString = function (d) {
@@ -237,6 +269,7 @@ define(function (require, exports, module) {
             updatedNodes.each(function (d, i) {
                 if (!d.command) {
                     d3.select(this).select("circle.command").remove();
+                    d3.select(this).select("g.icon").remove();
                 }
                 if (d.active) {
                     nodePointerG.attr("transform", "translate(" + d.x + " " + (d.y + (d.command ? rad * 2 : rad)) + ")");
@@ -254,6 +287,14 @@ define(function (require, exports, module) {
             
             enteredLinks.style("stroke", function (d) {
                 return proofCommands.getColor(d.source.command);
+            }).on("click", function (d) {
+                var mouse = d3.mouse(d3.select("body").node());
+                if (!d.tooltip) {
+                    d.tooltip = new Tooltip().render(d, {x: mouse[0], y: mouse[1]});
+                } else {
+                    d.tooltip.remove();
+                    delete d.tooltip;
+                }
             });
             
             link.classed("active", function (d) {
@@ -273,26 +314,6 @@ define(function (require, exports, module) {
             });
         }
         
-        function replaceChildren(node, children) {
-            var color = proofCommands.getColor(node.command);
-            //delete any collapsed nodes
-            node._children = null;
-            node.children = children;
-            getSourceLinks(node).style("stroke", color).classed("command", true);
-            updateTree(node);
-        }
-        
-        function appendChildren(node, children) {
-            var color = proofCommands.getColor(node.command);
-            node.children = node.children || node._children || [];
-            node.children = node.children.concat(children);
-            var newIds = children.map(function (d) { return d.id; });
-            var newLinks = getSourceLinks(node).filter(function (d) {
-                return newIds.indexOf(d.target.id) > -1;
-            });
-            newLinks.style("stroke", color).classed("command", true);
-            updateTree(node);
-        }
         /**
             Add a proof command (strategy to the selected node)
         */
@@ -304,6 +325,7 @@ define(function (require, exports, module) {
                 } else {
                     command = command || "(grind)";
                     node.command = command;
+                    node.commandLabel = commandLabel;
                     //if g wasnt supplied get it from the dom
                     g = g || getNodeElements(node);
                     g.select(".command").remove();
@@ -327,18 +349,6 @@ define(function (require, exports, module) {
             updateTree(node);
         };
         
-        /**
-            Execute a command on the pvs server and replace the children nodes with the resolved 
-            promise.
-            
-            @param promise a promise to run to obtain data about the node and children to use as replacement in the node
-        */
-        function executeCommand(promise) {
-            return promise.then(function (data) {
-                replaceChildren(data.node, data.children);
-                return Promise.resolve(data);
-            });
-        }
         
         /**
             Copies a command from source node to target node and runs the commandRunner function
@@ -445,10 +455,7 @@ define(function (require, exports, module) {
         bindKeys();
         
         vis.addCommand = addCommand;
-        vis.replaceChildren = replaceChildren;
-        vis.appendChildren = appendChildren;
-        vis.executeCommand = executeCommand;
-        
+
         vis.registerCommandRunner = function (d) {
             commandRunner = d;
         };
@@ -462,9 +469,11 @@ define(function (require, exports, module) {
                 console.log(event);
                 //remove the command to show that it has no effect
                 d3.select(".node.active .command").transition().duration(500).attr("r", 0)
-                    .each("end", function () {
+                    .each("end", function (d) {
+                        delete d.command;
                         d3.select(this).remove();
                     });
+                d3.select(".node.active .icon").remove();
             });
         };
     }

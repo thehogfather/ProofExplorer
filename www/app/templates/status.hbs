@@ -1,34 +1,32 @@
-<div class="panel panel-default">
-    <div class="panel-heading">{{result.label}}</div>
-    <div class="panel-body">
+<div class="content">
+    <h5>{{result.label}}</h5>
+    <div>
         {{#if result.sequent}}
         <div class="sequent">
              {{#if result.sequent.antecedents}}
             <div class="antecedents">
-                <h4>antecedents</h5>
+                <h6>antecedents</h6>
                 <div>
-                    <ul>
                     {{#each result.sequent.antecedents}}
-                    <li> 
-                        {{cedent this}}
-                    </li>
+                    <div> 
+                        <span>{{sequentLabel this}}</span>
+                        <pre class="formula">{{formula}}</pre>
+                    </div>
                     {{/each}}
-                    </ul>
                 </div>
             </div>
             {{/if}}
 
             {{#if result.sequent.succedents}}
             <div class="succedents">
-                <h4>succedents</h5>
+                <h6>succedents</h6>
                 <div>
-                    <ul>
                     {{#each result.sequent.succedents}}                
-                    <li>
-                        {{cedent this}}
-                    </li>
+                    <div> 
+                        <span>{{sequentLabel this}}</span>
+                        <pre class="formula">{{formula}}</pre>
+                    </div>
                     {{/each}}
-                    </ul>
                 </div>
             </div>
             {{/if}}

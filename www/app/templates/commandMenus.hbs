@@ -1,12 +1,17 @@
-<div>
+<div class="btn-group">
     {{#each this}}
-    <div class="btn-group">
+    <div class="btn-group btn-group-sm">
         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
             {{label}} <span class="caret"></span>
         </button>
-        <ul class="dropdown-menu" role="menu">
+        <ul class="dropdown-menu">
             {{#each children}}
-            <li><a href="#">{{this}}</a></li>
+            <li title="{{this.command}}">
+                <a href="#">
+                    <span class="tool-icon"><img src="css/glyphicons/png/glyphicons_{{this.icon}}.png"/></span>
+                    <span class="tool-label">{{this.label}}</span>
+                </a>
+            </li>
             {{/each}}
         </ul>
     </div>

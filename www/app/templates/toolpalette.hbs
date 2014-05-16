@@ -1,4 +1,17 @@
+<div  id="toolbox-palette">
+    <h5>Commands</h5>
+    {{#each this}}
+        <div title="{{label}}" class="panel-collapse collapse in" id="{{id}}">
+                {{#each children}}
+                    {{tool this}}
+                {{/each}}
+        </div>
+    {{/each}}
+</div>
+
+<!--
 <div class="panel-group" id="toolbox-palette">
+    <h5>Commands</h5>
     {{#each this}}
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -7,10 +20,10 @@
         <div class="panel-collapse collapse in" id="{{id}}">
             <div class="panel-body">
                 {{#each children}}
-                <span class="label label-default">{{this}}</span>
+                    {{tool this}}
                 {{/each}}
             </div>
         </div>
     </div>
     {{/each}}
-</div>
+</div>-->

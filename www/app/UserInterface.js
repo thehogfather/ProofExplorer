@@ -26,7 +26,8 @@ define(function (require, exports, module) {
     function onTreeNodeMouseOver(event) {
         if (draggedCommand) {
             var nodeEl = event.nodeEl;
-            nodeEl.attr("r", nodeRad * 3).style("opacity", 0.5);
+            nodeEl.style("fill", "orange")
+                    .style("opacity", 0.5);
             targetNodeEvent = event;
         }
     }
@@ -34,7 +35,7 @@ define(function (require, exports, module) {
     function onTreeNodeMouseOut(event) {
         if (draggedCommand) {
             var nodeEl = event.nodeEl;
-            nodeEl.attr("r", nodeRad).style("opacity", null);
+            nodeEl.style("fill", "none");
         }
         targetNodeEvent = null;
     }
@@ -75,7 +76,10 @@ define(function (require, exports, module) {
             .addListener("mouseout.node", onTreeNodeMouseOut)
             .addListener("click.node", onTreeNodeClicked)
             .addListener("postpone", function (event) {
-                session.postponeUntil(event.targetNode.id);
+                session.postponeUntil(event.targetNode.id)
+                    .then(function (res) {
+                        StatusLogger.log(res);
+                    });
             });
         
         //add event for free text
@@ -93,8 +97,13 @@ define(function (require, exports, module) {
         function windowResized(event) {
             console.log(event);
             var navControlHeight = $("#navControl").height(),
-                consoleHeight = $("#console").height();
-            $("#proofTree").height(window.outerHeight - navControlHeight - consoleHeight);
+                consoleHeight = $("#console").height(),
+                bodyHeight = window.outerHeight,
+                bodyWidth = window.outerWidth,
+                browserHeader = window.screen.height - window.screen.availHeight;
+            $("#proofTree").height(bodyHeight - navControlHeight);
+            $("#info-div").height(bodyHeight - navControlHeight);
+            $(".container").width(bodyWidth - $("#toolPalette")[0].getBoundingClientRect().width);
         }
         window.onresize = windowResized;
         windowResized();
@@ -112,12 +121,11 @@ define(function (require, exports, module) {
                 return {x: 0, y: 0, command: d};
             });
 
-            //var tb = d3.select("svg g");
             var tb = d3.select("svg").insert("g", "g");
             var icong = tb.selectAll(".button").data(data).enter()
                 .append("g").attr("class", "button")
                 .attr("transform", function (d, i) {
-                    return "translate(" + (i * (iconRad * 2 + pad)) + ", 0)";
+                    return "translate(20 " + (i * (iconRad * 2 + pad)) + ")";
                 });
 
             var button = icong.append("circle")
@@ -147,19 +155,18 @@ define(function (require, exports, module) {
             var ghostNode;
 
             drag.on("dragstart", function (d) {
-                ghostNode = tb.insert("circle", "g").attr("r", iconRad / 2)
+                ghostNode = tb.insert("circle", "g").attr("r", iconRad)
                     .attr("cx", d3.event.sourceEvent.x)
                     .attr("cy", d3.event.sourceEvent.y)
                     .attr("class", "ghost")
                     .style("fill", proofCommands.getColor(d.command))
-                    .style("stroke", d3.rgb(proofCommands.getColor(d.command)).darker());
-                    //.style("display", "none");
+                    .style("stroke", d3.rgb(proofCommands.getColor(d.command)).darker())
+                    .style("display", "none");
                 draggedCommand = d;
                 d3.event.sourceEvent.stopPropagation();
             }).on("drag", function (d) {
                 var pos = d3.mouse(tb.node());
                 ghostNode.attr("cx", pos[0]).attr("cy", pos[1]).style("display", null);
-                ghostNode.style("display", null);
             }).on("dragend", function (d) {
                 if (targetNodeEvent) {
                     var tData = targetNodeEvent.nodeData,
@@ -183,10 +190,14 @@ define(function (require, exports, module) {
                 draggedCommand = null;
                 
             });
-
             tb.selectAll("circle").call(drag);
         }
         
+        function commandClicked(label, command) {
+            var txt = d3.select("#txtCommand");
+            txt.property("value", command);
+            txt.node().focus();
+        }
          //begin the session
         session.begin(context, file)
             .then(function (res) {
@@ -198,19 +209,13 @@ define(function (require, exports, module) {
         
         session.addListener("treecreated", function (event) {
             treeVis.render(event.tree);
-            ToolPalette.create();
+            ToolPalette.create()
+                .on("commandclicked", commandClicked);
             treeVis.initialise(session);
             
             createControls();
             CommandsMenu.create(session)
-                .on("commandclicked", function (command) {
-                    treeVis.addCommand(session.getActiveState(), command);
-                    session.sendCommand(proofCommand(command))
-                        .then(function (res) {
-                            console.log(res);
-                            StatusLogger.log(res);
-                        });
-                });
+                .on("commandclicked", commandClicked);
             
             treeVis.registerCommandRunner(function (node, command) {
                 return session.postponeUntil(node.id)

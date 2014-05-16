@@ -7,53 +7,45 @@
         <script data-main="app" src="lib/require.js"></script>
         <script src="lib/jquery.js"></script>
         <script src="lib/bootstrap.js"></script>
-        <link type="text/css" rel="stylesheet" href="css/style.css"/>
         <link type="text/css" rel="stylesheet" href="css/bootstrap.css"/>
+        <link type="text/css" rel="stylesheet" href="css/style.css"/>
     </head>
     <body>
-        <div class="container-fluid center-block">
-            <div class="row">
-                <div class="col-md-2">
-                    <div id="toolPalette">
-                        
-                    </div>
-                </div>
-                <div class="col-md-10">
-                    <div class="row" id="navControl">
-                        <div id="menubar"></div>
+        <!--
+            <div class="sidebar">
+                <div class="view-toggle"><span class="glyphicon glyphicon-wrench"></span></div>
+                <div class="view-toggle"></div>
+                <div class="view-toggle"><span class="glyphicon glyphicon-book"></span></div>
+            </div>
+-->
+        <div id="toolPalette">
+
+        </div>
+        <div class="container center-block">
+            <div id="content-wrapper">
+                
+                <div class="row">
+                    <div class="col-md-7">
+                        <div id="menubar" class="col-md-12"></div>
                         <div id="toolbox" class="input-group">
                             <input type="text" id="txtCommand" class="form-control" placeholder="Enter PVS command here"/>
                             <span id="send" class="input-group-addon">Send</span>
                         </div>
+                        <div id="proofTree"></div>
+                       
                     </div>
-                    <div class="row">
-                        <div id="proofTree" class="col-md-8"></div>
-                        <div  class="col-md-4">
-                            <div class="row">
-                                <div id="status"></div>
-                            </div>
+                    <div  class="col-md-5" id="info-div">
+                        <div id="status" class="row"></div>
+                        <div id="console" class="row">
+                            <h5 class="underline">Console</h5>
+                            <ul id="console-list" class="list-group">
 
+                            </ul>
                         </div>
                     </div>
-                   <div class="row">
-                        <div id="console">
-                            <div class="panel panel-info">
-                                <div class="panel-heading">
-                                    <h4 class="panel-title"><a href="#consoleBody" data-toggle="collapse">Console</a></h4>
-                                </div>
-                                <div id="consoleBody" class="panel-collapse collapse">
-                                <div class="panel-body">
-                                    <ul id="console-list" class="list-group">
-
-                                    </ul>
-                                </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                </div>
+                </div>            
             </div>
-            
+ 
+        </div>
     </body>
 </html>
