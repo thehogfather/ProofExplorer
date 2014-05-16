@@ -17,7 +17,14 @@ define(function (require, exports, module) {
         StatusLogger = require("app/util/StatusLogger"),
         Tooltip = require("app/util/Tooltip");
     
+    var iconsUrlBase = "css/glyphicons/png/glyphicons_",
+        iconWidth = "20px",
+        iconHeight = "20px";
     var vis = eventDispatcher({}), commandRunner, _session;
+    
+    function iconUrl(iconName) {
+        return iconsUrlBase.concat("{0}.png").format(iconName);
+    }
     
     function triangle(size) {
         return "M0 0l-" + (size / 2) + " " + size + "h" + size + "Z";
@@ -55,7 +62,7 @@ define(function (require, exports, module) {
         var toggleCollapse, onMouseOver, onMouseOut, onMouseDown, addCommand, onClick;
        
         var nodePointerG = svg.append("g").attr("class", "node-pointer");
-        var nodePointer = nodePointerG.append("path").attr("d", triangle(rad * 2));
+        var nodePointer = nodePointerG.append("path").attr("d", triangle(rad * 1.5));
         
         var pointerDrag = d3.behavior.drag(), startPointerPos, pointerDragging, initialPointerTransform;
         pointerDrag.on("dragstart", function () {
@@ -86,7 +93,7 @@ define(function (require, exports, module) {
         onClick = function (d) {
             vis.fire({type: "click.node", nodeData: d, nodeEl: d3.select(this)});
         };
-        
+        //register mousedown handler for nodes
         onMouseDown = function (d) {
             d3.event.preventDefault();
             d3.event.stopPropagation();
@@ -182,18 +189,21 @@ define(function (require, exports, module) {
                 })
                 .attr("r", rad * 2).on("mousedown", function () {
                     d3.event.stopPropagation();
-                }).call(drag);
+                });
             var p = d3.select(el.node().parentNode);
+//            p.append("circle").classed("event-receiver", true)
+//                .attr("r", rad * 3)
+//                .on("mouseover", onMouseOver).on("mouseout", onMouseOut).call(drag);
+//            
             p.select("g.icon").remove();
             p.append("g").attr("class", "icon")
                 .append("svg:foreignObject")
-                .attr("x", 0)
-                .attr("y", 0)
-                .attr("width", "40px")
-                .attr("height", "40px")
-                .append("xhtml:div").attr("xmlns", "http://www.w3.org/1999/xhtml")
+                .attr("x", rad)
+                .attr("y", rad)
+                .attr("width", iconWidth)
+                .attr("height", iconHeight)
                 .append("xhtml:img").attr("src", function (d) {
-                    return "css/glyphicons/png/glyphicons_" + proofCommands.getIcon(commandLabel(d.command)) + ".png";
+                    return iconUrl(proofCommands.getIcon(commandLabel(d.command)));
                 });
             return el;
         }
@@ -225,24 +235,25 @@ define(function (require, exports, module) {
                     var nodeCommand = d3.select(this).append("circle");
                     decorateCommandNode(nodeCommand);
                 }
-                
             });
             //append data nodes
-           
             enteredNodes.append("circle")
                 .attr("class", "state")
                 .attr("r", function (d) {
                     return d._children ? rad * 1.5 : rad;
                 });
-             
+            //add node to recieve events - this is a transparent node that allows good feedback when an object is dragged over a node
             enteredNodes.append("circle")
-                .attr("class", "eventreceiver")
+                .attr("class", "event-receiver")
                 .attr("r", rad * 3)
                 .on("mouseover", onMouseOver)
                 .on("mouseout", onMouseOut)
-//                .on("dblclick", toggleCollapse)
                 .on("mousedown", onMouseDown)
                 .on("click", onClick);
+            //add collapse expand toggle to the top right
+            enteredNodes.append("g").attr("class", "collapser")
+                .append("foreignObject").attr("x", -rad * 2).attr("y", -rad * 3).attr("width", iconWidth).attr("height", iconHeight)
+                .append("xhtml:img").on("click", toggleCollapse);
             
             //append labels to nodes
             var labelXFunc = function (d) {return d.command ? rad * 2.2 : rad * 1.5; },
@@ -253,27 +264,47 @@ define(function (require, exports, module) {
                 .attr("x", labelXFunc).attr("y", 0)
                 .text(labelString);
             
-            var exitedNodes = node.exit().transition().duration(duration)
+            var exitedNodes = node.exit();
+            exitedNodes.transition().duration(duration)
                 .attr("transform", "translate(" + parent.x + " " + parent.y + ")")
                 .remove();
             
-            var updatedNodes = node.transition().duration(duration)
+            var updatedNodes = node;
+            updatedNodes.transition().duration(duration)
                 .attr("transform", function (d) {
                     return "translate(" + d.x + " " + d.y + ")";
-                }).attr("class", function (d) {
-                    return d._children ? "node collapsed" : d.active ? "node active" : "node";
                 });
+            updatedNodes.classed("node", true)
+                .classed("active", function (d) { return d.active; })
+                .classed("collapsed", function (d) {return d._children; });
+    
             //update label pos
             updatedNodes.select("text").attr("x", labelXFunc);
+            //update the collapse expand icons
+            updatedNodes.selectAll(".collapser img")
+                .attr("src", function (d) {
+                    var iconName = (d._children ? "circle_plus" : d.children ? "circle_minus" : "");
+                    return iconName.length ? iconUrl(iconName) : iconName;
+                });
             //remove command nodes if any and update the node pointer position
             updatedNodes.each(function (d, i) {
                 if (!d.command) {
                     d3.select(this).select("circle.command").remove();
                     d3.select(this).select("g.icon").remove();
                 }
-                if (d.active) {
+                //check if node has hidden child that is currently active
+                var hiddenActive = false;
+                TreeData.visit(function (node, nodeIndex, parent) {
+                    if (node !== d) {
+                        hiddenActive = node.active;
+                        return node.active;
+                    }
+                    return false;
+                }, d, null, null, function (d) {return d._children || d.children; });
+                if (d.active || hiddenActive) {
                     nodePointerG.attr("transform", "translate(" + d.x + " " + (d.y + (d.command ? rad * 2 : rad)) + ")");
                 }
+                d3.select(this).classed("hidden-active", hiddenActive);
             });
             
             var link = svg.selectAll(".link").data(links, function (d) {return d.target.id; });
@@ -298,7 +329,7 @@ define(function (require, exports, module) {
             });
             
             link.classed("active", function (d) {
-                return d.target && d.target.active;
+                return d.target && d.target.formula; //d.target && d.target.active;
             }).transition().duration(duration)
                 .attr("d", diagonal);
             

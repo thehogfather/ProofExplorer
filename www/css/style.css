@@ -3,7 +3,9 @@ svg {
     height: 100%;
     width: 100%;
 }
-
+svg foreignObject {
+    position: relative;
+}
 body {
     overflow: hidden;
 }
@@ -30,7 +32,7 @@ path:hover {
     fill: #944;
 }
 
-.node circle.eventreceiver {
+.node circle.event-receiver {
     fill: none;
     stroke: none;
 }
@@ -76,9 +78,14 @@ circle.ghost {
     text-anchor: start;
 }
 
-.node foreignObject img {
+.node img {
     height: 15px;
 }
+
+.hidden-active circle{
+    stroke: #e31cea;
+}
+
 .alert-tooltip {
     background-color: #ececef;
     border: 1px solid #d9d9db;
@@ -199,4 +206,14 @@ path.active {
 
 #console-list .list-group-item {
     padding: 2px 2px;
+}
+
+#menubar {
+    width: 1003px;
+    height: 50px;
+}
+
+.menu-wrap {
+    border-bottom: 1px solid #ddd;
+    border-radius: 0 4px 4px 0;
 }

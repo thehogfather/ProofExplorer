@@ -19,18 +19,21 @@ define(function (require, exports, module) {
         @param node the current node being traversed
         @param nodeIndex the index of the current node in the parent
         @param parent the parent of the current node or null of this is the root node
+        @param childrenAccessor a function to use to get the children of the nodes
     */
-    function visit(f, node, nodeIndex, parent) {
+    function visit(f, node, nodeIndex, parent, childrenAccessor) {
+        childrenAccessor = childrenAccessor || function (d) { return d.children; };
         nodeIndex = [null, undefined].indexOf(nodeIndex) > -1 ? -1 : nodeIndex;//set nodeindex to -1 if it is undefined or null
         var res = f(node, nodeIndex, parent);
         if (res) {
             return res;
         }
-        if (node.children) {
-            var i;
-            for (i = 0; i < node.children.length; i++) {
-                if (visit(f, node.children[i], i, parent)) {
-                    break;
+        var i, children = childrenAccessor(node);
+        if (children) {
+            for (i = 0; i < children.length; i++) {
+                res = visit(f, children[i], i, parent, childrenAccessor);
+                if (res) {
+                    return res;
                 }
             }
         }
@@ -149,6 +152,8 @@ define(function (require, exports, module) {
         }, root);
         data = currentNode = root;
     }
+    
+    TreeData.visit = visit;
     
     TreeData.visitAll = function (f, node) {
         visitAll(f, node);
