@@ -1,4 +1,4 @@
-<div class="content">
+<div>
     <h5>{{result.label}}</h5>
     <div>
         {{#if result.sequent}}
@@ -23,7 +23,7 @@
                 <div>
                     {{#each result.sequent.succedents}}                
                     <div> 
-                        <span>{{sequentLabel this}}</span>
+                        <span class="sequent-label">{{sequentLabel this}}</span>
                         <pre class="formula">{{formula}}</pre>
                     </div>
                     {{/each}}

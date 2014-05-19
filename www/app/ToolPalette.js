@@ -27,7 +27,7 @@ define(function (require, exports, module) {
     }
     
     var ToolPaletteView = Backbone.View.extend({
-        el: "#toolPalette",
+        el: "#tool-palette",
         initialize: function (model) {
             this.model = model;
             this.render(model);

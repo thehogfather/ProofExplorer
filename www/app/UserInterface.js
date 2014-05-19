@@ -8,7 +8,7 @@
 define(function (require, exports, module) {
     "use strict";
     var d3 = require("d3"),
-        treeVis = require("app/TreeVis"),
+        TreeVis = require("app/TreeVis"),
         TreeGenerator = require("app/RandomTreeGenerator"),
         proofCommands = require("app/util/ProofCommands"),
         PVSSession = require("app/PVSSession"),
@@ -21,7 +21,8 @@ define(function (require, exports, module) {
     var commands = proofCommands.getCommands(),
         draggedCommand,
         targetNodeEvent,
-        session = new PVSSession();
+        session = new PVSSession(),
+        treeVis;
     
     function onTreeNodeMouseOver(event) {
         if (draggedCommand) {
@@ -101,9 +102,9 @@ define(function (require, exports, module) {
                 bodyHeight = window.outerHeight,
                 bodyWidth = window.outerWidth,
                 browserHeader = window.screen.height - window.screen.availHeight;
-            $("#proofTree").height(bodyHeight - navControlHeight);
-            $("#info-div").height(bodyHeight - navControlHeight);
-            $(".container").width(bodyWidth - $("#toolPalette")[0].getBoundingClientRect().width);
+            $("#proofTree").height(bodyHeight - navControlHeight - consoleHeight);
+            $("#info-div").height(bodyHeight - navControlHeight - consoleHeight);
+            $(".container").width(bodyWidth - $("#tool-palette")[0].getBoundingClientRect().width);
         }
         window.onresize = windowResized;
         windowResized();
@@ -208,7 +209,7 @@ define(function (require, exports, module) {
             });
         
         session.addListener("treecreated", function (event) {
-            treeVis.render(event.tree);
+            treeVis = new TreeVis(event.tree);
             ToolPalette.create()
                 .on("commandclicked", commandClicked);
             treeVis.initialise(session);
@@ -223,9 +224,10 @@ define(function (require, exports, module) {
                         return session.sendCommand(proofCommand(command));
                     });
             });
+            bindEvents();
         });
         
-        bindEvents();
+
     }
     
     module.exports = {

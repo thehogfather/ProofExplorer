@@ -1,5 +1,4 @@
 svg {
-    background: #ddd;
     height: 100%;
     width: 100%;
 }
@@ -20,10 +19,7 @@ path {
 path:hover {
     stroke-width: 6px;
 }
- .collapsed,
- .selected.collapsed {
-     fill: #87adf5;
- }
+
  circle:hover {
      stroke-width: 3px;
  }
@@ -69,7 +65,7 @@ circle.ghost {
     z-index: 20;
 }
 
-.node circle.collapsed {
+.node.collapsed {
     stroke-width: 4px;   
 }
 
@@ -125,6 +121,7 @@ path.active {
 }
 
 #toolbox {
+    margin-bottom: 20px;
 /*
     width: 600px;
     margin-top: 30px;
@@ -137,7 +134,7 @@ path.active {
 }
 
 #console {
-    height: 20%;
+    height: 150px;
     overflow-y: scroll;
 }
 
@@ -182,7 +179,7 @@ path.active {
     height: 80%;
 }
 
-#toolPalette {
+#tool-palette {
     width: 150px;
     padding: 15px;
     border-right: 1px solid rgb(206,206,206);

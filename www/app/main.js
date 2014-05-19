@@ -27,7 +27,12 @@ define(function (require, exports, module) {
             UI.createUI();
             wsc.addListener("interactive", function (event) {
                 var ok = confirm(event.response.params[0]);
-                var response = {id: event.response.id, response: {jsonrpc_result: {id: event.response.id, jsonrpc: event.response.jsonrpc, result: ok ? "yes" : "no"}}};
+                var response = {
+                    id: event.response.id,
+                    response: {
+                        jsonrpc_result: {id: event.response.id, jsonrpc: event.response.jsonrpc, result: ok ? "yes" : "no"}
+                    }
+                };
                 //send back a pvs response message
                 comm.sendResponse(response);
             }).addListener("info", log)

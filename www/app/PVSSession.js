@@ -229,8 +229,8 @@ define(function (require, exports, module) {
         function postpone() {
             return comm.sendCommand({method: "proof-command", params: ["(postpone)"]})
                 .then(function (res) {
-                    if (res.jsonrpc_result.result.label === targetName
-                            || res.jsonrpc_result.result.label === currentlyActiveName) {
+                    if (res.jsonrpc_result.result.label === targetName ||
+                        res.jsonrpc_result.result.label === currentlyActiveName) {
                         return ps.updateCurrentState(res);
                     } else {
                         return postpone();

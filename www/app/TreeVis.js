@@ -3,24 +3,28 @@
  * @author Patrick Oladimeji
  * @date 4/14/14 17:34:16 PM
  */
+/*jshint undef: true, unused: true */
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, d3, require, $, brackets, window, MouseEvent, Promise */
+/*global define,Promise */
 
 define(function (require, exports, module) {
     "use strict";
     var d3 = require("d3"),
-        deepCopy = require("app/deepcopy"),
         eventDispatcher = require("app/util/eventDispatcher"),
         TreeData = require("app/TreeData"),
         proofCommands = require("app/util/ProofCommands"),
         TreeGenerator = require("app/RandomTreeGenerator"),
-        StatusLogger = require("app/util/StatusLogger"),
         Tooltip = require("app/util/Tooltip");
     
     var iconsUrlBase = "css/glyphicons/png/glyphicons_",
         iconWidth = "20px",
         iconHeight = "20px";
-    var vis = eventDispatcher({}), commandRunner, _session;
+    
+    var el, svg, rad = 10, targetNode, draggedNode, drag;
+    var w, h, levelHeight = 70, margin = {top: 50, left: 50, right: 50, bottom: 50};
+    var diagonal = d3.svg.diagonal(), zoom = d3.behavior.zoom(), board;
+    var pointerDrag = d3.behavior.drag(), startPointerPos, pointerDragging, initialPointerTransform;
+    var vis, commandRunner, treeData, tree, nodePointerG;
     
     function iconUrl(iconName) {
         return iconsUrlBase.concat("{0}.png").format(iconName);
@@ -30,41 +34,109 @@ define(function (require, exports, module) {
         return "M0 0l-" + (size / 2) + " " + size + "h" + size + "Z";
     }
     
-    function render(treeData) {
-        var targetNode, draggedNode, drag;
-        var el = d3.select("#proofTree");
-                
-        var levelHeight = 70, margin = {top: 50, left: 50, right: 50, bottom: 50};
-        
-        var w = 900, h = treeData.depth() * levelHeight, rad = 10;
-        var diagonal = d3.svg.diagonal();
-        
-        var zoom = d3.behavior.zoom(), svg, board;
-        
-        function rescale() {
-            svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+    function getNodeElements(node) {
+        return svg.selectAll(".node").filter(function (d) {
+            return d === node;
+        });
+    }
+
+
+    function commandLabel(command) {
+        var args = command.replace(/[()]/g, "").split(" ");
+        return args[0];
+    }
+
+    function decorateCommandNode(el) {
+        el.attr("class", "command")
+            .style("fill", function (d) {
+                return proofCommands.getColor(d.command);
+            })
+            .style("stroke", function (d) {
+                return d3.rgb(proofCommands.getColor(d.command)).darker();
+            })
+            .attr("r", rad * 2).on("mousedown", function () {
+                d3.event.stopPropagation();
+            });
+        var p = d3.select(el.node().parentNode);        
+        p.select("g.icon").remove();
+        p.append("g").attr("class", "icon")
+            .append("svg:foreignObject")
+            .attr("x", rad)
+            .attr("y", rad)
+            .attr("width", iconWidth)
+            .attr("height", iconHeight)
+            .append("xhtml:img").attr("src", function (d) {
+                return iconUrl(proofCommands.getIcon(commandLabel(d.command)));
+            });
+        return el;
+    }
+    
+    function rescale() {
+        svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+    }
+    
+    var onClick = function (d) {
+        var mouse = d3.mouse(d3.select("body").node());
+        if (d.formula) {
+            if (!d.tooltip) {
+                d.tooltip = new Tooltip().render(d, {x: mouse[0], y: mouse[1]});
+            } else {
+                d.tooltip.remove();
+                delete d.tooltip;
+            }
         }
+        vis.fire({type: "click.node", nodeData: d, nodeEl: d3.select(this)});
+    };
+        //register mousedown handler for nodes
+    var onMouseDown = function () {
+        d3.event.preventDefault();
+        d3.event.stopPropagation();
+    };
+
+    var onMouseOver = function (d) {
+        if ((draggedNode && draggedNode !== d) || pointerDragging) {
+            targetNode = d;
+            d3.select(this).style("fill", "orange")
+                .style("opacity", 0.5);
+        }
+        //show the minimise icon
+        d3.select(this.parentNode).select(".collapser img").style("display", null);
+        vis.fire({type: "mouseover.node", nodeData: d, nodeEl: d3.select(this)});
+    };
+
+    var onMouseOut = function (d) {
+        d3.select(this).style("fill", "none");
+        d3.select(this.parentNode).select(".collapser img").style("display", "none");
+        vis.fire({type: "mouseout.node", nodeData: d, nodeEl: d3.select(this)});
+        targetNode = null;
+    };
         
-        board = el.append("svg")
-            .attr("width", w + margin.left + margin.top)
-            .attr("height", h + margin.bottom + margin.top)
-            .call(zoom).on("dblclick.zoom", null);
-        
-        //board.append("rect").attr("width", w).attr("height", h).attr("fill", "white");
-        
-        svg = board.attr("pointer-events", "all")
-            .append("g").attr("transform", "translate(" + margin.left + " " + margin.top + ")");
-           
-        zoom.on("zoom", rescale);
-        
-        var tree = d3.layout.tree().size([w, h]);
-        
-        var toggleCollapse, onMouseOver, onMouseOut, onMouseDown, addCommand, onClick;
-       
+    /**
+        Add a proof command (strategy to the selected node)
+    */
+    var addCommand = function (node, command, g) {
+        //create a promise that resolves when children have been created
+        return new Promise(function (resolve, reject) {
+            if (!node) {
+                reject({command: command});
+            } else {
+                command = command || "(grind)";
+                node.command = command;
+                node.commandLabel = commandLabel;
+                //if g wasnt supplied get it from the dom
+                g = g || getNodeElements(node);
+                g.select(".command").remove();
+                var c = g.insert("circle", "circle");
+                decorateCommandNode(c);
+                resolve(node);
+            }
+        });
+    };
+    
+    function createActiveNodePointer() {
         var nodePointerG = svg.append("g").attr("class", "node-pointer");
-        var nodePointer = nodePointerG.append("path").attr("d", triangle(rad * 1.5));
+        nodePointerG.append("path").attr("d", triangle(rad * 1.5));
         
-        var pointerDrag = d3.behavior.drag(), startPointerPos, pointerDragging, initialPointerTransform;
         pointerDrag.on("dragstart", function () {
             var pos = d3.mouse(nodePointerG.node());
             initialPointerTransform = nodePointerG.attr("transform");
@@ -90,13 +162,139 @@ define(function (require, exports, module) {
             svg.node().appendChild(nodePointerG.node());
         });
         nodePointerG.call(pointerDrag);
-        onClick = function (d) {
-            vis.fire({type: "click.node", nodeData: d, nodeEl: d3.select(this)});
-        };
-        //register mousedown handler for nodes
-        onMouseDown = function (d) {
-            d3.event.preventDefault();
-            d3.event.stopPropagation();
+        return nodePointerG;   
+    }
+        
+    var toggleCollapse = function (node) {
+        if (node.children) {
+            node._children = node.children;
+            node.children = null;
+            d3.select(this).attr("r", rad * 1.5).classed("collapsed", true);
+        } else {
+            node.children = node._children;
+            node._children = null;
+            d3.select(this).attr("r", rad).classed("collapsed", false);
+        }
+        updateTree(node);
+    };
+    
+     /**
+        Update the proof tree. Add new nodes, remove deleted or hidden nodes
+        @param parent The parent node for any added or deleted nodes
+    */
+    function updateTree(parent) {
+        var duration = 500;
+        var maxDepth = treeData.depth();
+        h = Math.max(500, levelHeight * maxDepth);
+        el.select("svg").attr("width", w + margin.left + margin.right).attr("height", h + margin.top + margin.bottom);
+        tree.size([w, h]);
+        var nodes = tree.nodes(treeData.getData()),
+            links = tree.links(nodes);
+
+        var node = svg.selectAll("g.node")
+            .data(nodes, function (d) {
+                return d.id;
+            });
+        var enteredNodes = node.enter()
+            .insert("g", "g.node-pointer").attr("class", "node")
+            .attr("transform", function (d) {
+                var x0 = parent.x0 || d.x, y0 = parent.y0 || d.y;
+                return "translate(" + x0 + " " + y0 + ")";
+            });
+
+        //append command nodes if there are any
+        enteredNodes.each(function (d) {
+            if (d.command) {
+                var nodeCommand = d3.select(this).append("circle");
+                decorateCommandNode(nodeCommand);
+            }
+        });
+        //append data nodes
+        enteredNodes.append("circle")
+            .attr("class", "state")
+            .attr("r", function (d) {
+                return d._children ? rad * 1.5 : rad;
+            });
+        //add node to recieve events - this is a transparent node that allows good feedback when an object is dragged over a node
+        enteredNodes.append("circle")
+            .attr("class", "event-receiver")
+            .attr("r", rad * 3)
+            .on("mouseover", onMouseOver)
+            .on("mouseout", onMouseOut)
+            .on("mousedown", onMouseDown)
+            .on("click", onClick)
+            .call(drag);
+        //add collapse expand toggle to the top right
+        enteredNodes.append("g").attr("class", "collapser")
+            .on("mouseover", function () { d3.select(this).select("img").style("display", null);})
+            .on("mouseout", function () { d3.select(this).select("img").style("display", "none");})
+            .append("foreignObject").attr("x", -rad * 2).attr("y", -rad * 3).attr("width", iconWidth).attr("height", iconHeight)
+            .append("xhtml:img").on("click", toggleCollapse);
+
+        //append labels to nodes
+        var labelXFunc = function (d) {return d.command ? rad * 2.2 : rad * 1.5; },
+            labelString = function (d) {
+                return d.name && d.name.indexOf(".") > -1 ? d.name.substr(d.name.indexOf(".") + 1) : d.name;
+            };
+        enteredNodes.append("text")
+            .attr("x", labelXFunc).attr("y", 0)
+            .text(labelString);
+
+        var exitedNodes = node.exit();
+        exitedNodes.transition().duration(duration)
+            .attr("transform", "translate(" + parent.x + " " + parent.y + ")")
+            .remove();
+
+        var updatedNodes = node;
+        updatedNodes.transition().duration(duration)
+            .attr("transform", function (d) {
+                return "translate(" + d.x + " " + d.y + ")";
+            });
+        updatedNodes.classed("node", true)
+            .classed("active", function (d) { return d.active; })
+            .classed("collapsed", function (d) {return d._children; });
+
+        //update label pos
+        updatedNodes.select("text").attr("x", labelXFunc);
+        //update the collapse expand icons
+        updatedNodes.selectAll(".collapser img")
+            .attr("src", function (d) {
+                var iconName = (d._children ? "circle_plus" : d.children ? "circle_minus" : "");
+                return iconName.length ? iconUrl(iconName) : iconName;
+            });
+        //remove command nodes if any and update the node pointer position
+        updatedNodes.each(function (d) {
+            if (!d.command) {
+                d3.select(this).select("circle.command").remove();
+                d3.select(this).select("g.icon").remove();
+            }
+            //check if node has hidden child that is currently active
+            var hiddenActive = false;
+            TreeData.visit(function (node) {
+                if (node !== d) {
+                    hiddenActive = node.active;
+                    return node.active;
+                }
+                return false;
+            }, d, null, null, function (d) {return d._children || d.children; });
+            if (d.active || hiddenActive) {
+                nodePointerG.attr("transform", "translate(" + d.x + " " + (d.y + (d.command ? rad * 2 : rad)) + ")");
+            }
+            d3.select(this).classed("hidden-active", hiddenActive);
+        });
+
+        var link = svg.selectAll(".link").data(links, function (d) {return d.target.id; });
+        var enteredLinks = link.enter()
+            .insert("path", "g.node").attr("class", "link")
+            .attr("d", function (d) {
+                var x0 = parent.x0 || d.source.x, y0 = parent.y0 || d.source.y;
+                var o = {x: x0, y: y0};
+                return diagonal({source: o, target: o});
+            });
+
+        enteredLinks.style("stroke", function (d) {
+            return proofCommands.getColor(d.source.command);
+        }).on("click", function (d) {
             var mouse = d3.mouse(d3.select("body").node());
             if (!d.tooltip) {
                 d.tooltip = new Tooltip().render(d, {x: mouse[0], y: mouse[1]});
@@ -104,314 +302,80 @@ define(function (require, exports, module) {
                 d.tooltip.remove();
                 delete d.tooltip;
             }
-        };
-        
-        onMouseOver = function (d) {
-            if ((draggedNode && draggedNode !== d) || pointerDragging) {
-                targetNode = d;
-                d3.select(this).style("fill", "orange")
-                    .style("opacity", 0.5);
-            }
-            vis.fire({type: "mouseover.node", nodeData: d, nodeEl: d3.select(this)});
-        };
-        
-        onMouseOut = function (d) {
-            d3.select(this).style("fill", "none");
-            vis.fire({type: "mouseout.node", nodeData: d, nodeEl: d3.select(this)});
-            targetNode = null;
-        };
+        });
 
-        function getSourceLinks(node) {
-            return svg.selectAll(".link").filter(function (d) {
-                return d.source === node;
-            });
-        }
+        link.classed("active", function (d) {
+            return d.target && d.target.formula; //d.target && d.target.active;
+        }).transition().duration(duration)
+            .attr("d", diagonal);
+
+        link.exit().transition().duration(duration)
+            .attr("d", function () {
+                var o = {x: parent.x, y: parent.y};
+                return diagonal({source: o, target: o});
+            }).remove();
+
+        nodes.forEach(function (d) {
+            d.x0 = d.x;
+            d.y0 = d.y;
+        });
+    }
         
-        function getNodeElements(node) {
-            return svg.selectAll(".node").filter(function (d) {
-                return d === node;
-            });
-        }
-        
-        function visit(node, f) {
-            f(node);
-            if (node && node.children) {
-                node.children.forEach(function (n) {
-                    visit(n, f);
-                });
-            }
-        }
-        /**
-            visit the subtree of the specified node and apply the specified function to the nodes and edges
-            @param node the root node of the subtree to traverse
-            @param func the function to call on each node and edge element 
-        */
-        function visitElements(node, func) {
-            var nodeEl = getNodeElements(node);
-            func(nodeEl);
-            var linkEl = getSourceLinks(node);
-            func(linkEl);
-            if (node && node.children) {
-                node.children.forEach(function (n) {
-                    visitElements(n, func);
-                });
-            }
-        }
-        
-        function colorChildren(node) {
-            visitElements(node, function (sel) {
-                if (sel) {
-                    sel.classed("dragging", true);
+    /**
+        Copies a command from source node to target node and runs the commandRunner function
+        which should essentially update the target node with any new children
+    */
+    var copyCommand = function (source, target, commandRunner) {
+        //sequence is to add command to tree node
+        //then to execute that command on the server for that node
+        //question is how we make sure the server has the right state
+        return addCommand(target, source.command)
+            .then(function (target) {
+                return commandRunner(target, target.command);
+            })
+            .then(function () {
+                var newChildren = target.children;
+                //if the target is already a child of the source we need to filter it out
+                var childCommands = source.children.filter(function (d) {
+                    return d.id !== target.id;
+                }), promises;
+                if (childCommands && childCommands.length) {
+                    promises = childCommands.map(function (cc, cindex) {
+                        return cc.command ? copyCommand(cc, newChildren[cindex], commandRunner)
+                            : Promise.reject("no command");
+                    });
+                    //try to resolve all the promises
+                    return Promise.all(promises);
+                } else {
+                    return Promise.reject("no child command");
                 }
             });
-        }
-        
-        function uncolorChildren(node) {
-            visitElements(node, function (sel) {
-                if (sel) {
-                    sel.classed("dragging", false);
-                }
-            });
-        }
-        
-        function commandLabel(command) {
-            var args = command.replace(/[()]/g, "").split(" ");
-            return args[0];
-        }
-        
-        function decorateCommandNode(el) {
-            el.attr("class", "command")
-                .style("fill", function (d) {
-                    return proofCommands.getColor(d.command);
-                })
-                .style("stroke", function (d) {
-                    return d3.rgb(proofCommands.getColor(d.command)).darker();
-                })
-                .attr("r", rad * 2).on("mousedown", function () {
-                    d3.event.stopPropagation();
-                });
-            var p = d3.select(el.node().parentNode);
-//            p.append("circle").classed("event-receiver", true)
-//                .attr("r", rad * 3)
-//                .on("mouseover", onMouseOver).on("mouseout", onMouseOut).call(drag);
-//            
-            p.select("g.icon").remove();
-            p.append("g").attr("class", "icon")
-                .append("svg:foreignObject")
-                .attr("x", rad)
-                .attr("y", rad)
-                .attr("width", iconWidth)
-                .attr("height", iconHeight)
-                .append("xhtml:img").attr("src", function (d) {
-                    return iconUrl(proofCommands.getIcon(commandLabel(d.command)));
-                });
-            return el;
-        }
-        
-        function updateTree(parent) {
-            var duration = 500;
-            var maxDepth = treeData.depth();
-            h = Math.max(500, levelHeight * maxDepth);
-            el.select("svg").attr("width", w + margin.left + margin.right).attr("height", h + margin.top + margin.bottom);
-            tree.size([w, h]);
-            var nodes = tree.nodes(treeData.getData()),
-                links = tree.links(nodes);
-            
-            var node = svg.selectAll("g.node")
-                .data(nodes, function (d) {
-                    return d.id;
-                });
-            var enteredNodes = node.enter()
-                .insert("g", "g.node-pointer").attr("class", "node")
-                .attr("transform", function (d) {
-                    var x0 = parent.x0 || d.x, y0 = parent.y0 || d.y;
-                    return "translate(" + x0 + " " + y0 + ")";
-                });
-            
-            //append command nodes if there are any
-            enteredNodes.each(function (d, i) {
-                if (d.command) {
-                    var color = proofCommands.getColor(d.command);
-                    var nodeCommand = d3.select(this).append("circle");
-                    decorateCommandNode(nodeCommand);
-                }
-            });
-            //append data nodes
-            enteredNodes.append("circle")
-                .attr("class", "state")
-                .attr("r", function (d) {
-                    return d._children ? rad * 1.5 : rad;
-                });
-            //add node to recieve events - this is a transparent node that allows good feedback when an object is dragged over a node
-            enteredNodes.append("circle")
-                .attr("class", "event-receiver")
-                .attr("r", rad * 3)
-                .on("mouseover", onMouseOver)
-                .on("mouseout", onMouseOut)
-                .on("mousedown", onMouseDown)
-                .on("click", onClick);
-            //add collapse expand toggle to the top right
-            enteredNodes.append("g").attr("class", "collapser")
-                .append("foreignObject").attr("x", -rad * 2).attr("y", -rad * 3).attr("width", iconWidth).attr("height", iconHeight)
-                .append("xhtml:img").on("click", toggleCollapse);
-            
-            //append labels to nodes
-            var labelXFunc = function (d) {return d.command ? rad * 2.2 : rad * 1.5; },
-                labelString = function (d) {
-                    return d.name && d.name.indexOf(".") > -1 ? d.name.substr(d.name.indexOf(".") + 1) : d.name;
-                };
-            enteredNodes.append("text")
-                .attr("x", labelXFunc).attr("y", 0)
-                .text(labelString);
-            
-            var exitedNodes = node.exit();
-            exitedNodes.transition().duration(duration)
-                .attr("transform", "translate(" + parent.x + " " + parent.y + ")")
-                .remove();
-            
-            var updatedNodes = node;
-            updatedNodes.transition().duration(duration)
-                .attr("transform", function (d) {
-                    return "translate(" + d.x + " " + d.y + ")";
-                });
-            updatedNodes.classed("node", true)
-                .classed("active", function (d) { return d.active; })
-                .classed("collapsed", function (d) {return d._children; });
+    };
     
-            //update label pos
-            updatedNodes.select("text").attr("x", labelXFunc);
-            //update the collapse expand icons
-            updatedNodes.selectAll(".collapser img")
-                .attr("src", function (d) {
-                    var iconName = (d._children ? "circle_plus" : d.children ? "circle_minus" : "");
-                    return iconName.length ? iconUrl(iconName) : iconName;
-                });
-            //remove command nodes if any and update the node pointer position
-            updatedNodes.each(function (d, i) {
-                if (!d.command) {
-                    d3.select(this).select("circle.command").remove();
-                    d3.select(this).select("g.icon").remove();
-                }
-                //check if node has hidden child that is currently active
-                var hiddenActive = false;
-                TreeData.visit(function (node, nodeIndex, parent) {
-                    if (node !== d) {
-                        hiddenActive = node.active;
-                        return node.active;
-                    }
-                    return false;
-                }, d, null, null, function (d) {return d._children || d.children; });
-                if (d.active || hiddenActive) {
-                    nodePointerG.attr("transform", "translate(" + d.x + " " + (d.y + (d.command ? rad * 2 : rad)) + ")");
-                }
-                d3.select(this).classed("hidden-active", hiddenActive);
-            });
-            
-            var link = svg.selectAll(".link").data(links, function (d) {return d.target.id; });
-            var enteredLinks = link.enter()
-                .insert("path", "g.node").attr("class", "link")
-                .attr("d", function (d) {
-                    var x0 = parent.x0 || d.source.x, y0 = parent.y0 || d.source.y;
-                    var o = {x: x0, y: y0};
-                    return diagonal({source: o, target: o});
-                });
-            
-            enteredLinks.style("stroke", function (d) {
-                return proofCommands.getColor(d.source.command);
-            }).on("click", function (d) {
-                var mouse = d3.mouse(d3.select("body").node());
-                if (!d.tooltip) {
-                    d.tooltip = new Tooltip().render(d, {x: mouse[0], y: mouse[1]});
-                } else {
-                    d.tooltip.remove();
-                    delete d.tooltip;
-                }
-            });
-            
-            link.classed("active", function (d) {
-                return d.target && d.target.formula; //d.target && d.target.active;
-            }).transition().duration(duration)
-                .attr("d", diagonal);
-            
-            link.exit().transition().duration(duration)
-                .attr("d", function (d) {
-                    var o = {x: parent.x, y: parent.y};
-                    return diagonal({source: o, target: o});
-                }).remove();
-            
-            nodes.forEach(function (d) {
-                d.x0 = d.x;
-                d.y0 = d.y;
-            });
-        }
+    function TreeVis(_treeData) {
+        vis = eventDispatcher(this);
+        treeData = _treeData;
+        el = d3.select("#proofTree");
+        w = 900;
+        h = treeData.depth() * levelHeight;
+        tree = d3.layout.tree().size([w, h]);
+        board = el.append("svg")
+            .attr("width", w + margin.left + margin.top)
+            .attr("height", h + margin.bottom + margin.top)
+            .call(zoom).on("dblclick.zoom", null);
         
+        //board.append("rect").attr("width", w).attr("height", h).attr("fill", "white");
+        
+        svg = board.attr("pointer-events", "all")
+            .append("g").attr("transform", "translate(" + margin.left + " " + margin.top + ")");
+           
+        zoom.on("zoom", rescale);
+        nodePointerG = createActiveNodePointer();       
         /**
-            Add a proof command (strategy to the selected node)
+            This initialises and registers the drag events on the nodes. The drag
+            object is later used for entered nodes in the updateTree function.
+            This allows node commands to be copied between branches in the tree.
         */
-        addCommand = function (node, command, g) {
-            //create a promise that resolves when children have been created
-            return new Promise(function (resolve, reject) {
-                if (!node) {
-                    reject({command: command});
-                } else {
-                    command = command || "(grind)";
-                    node.command = command;
-                    node.commandLabel = commandLabel;
-                    //if g wasnt supplied get it from the dom
-                    g = g || getNodeElements(node);
-                    g.select(".command").remove();
-                    var c = g.insert("circle", "circle");
-                    decorateCommandNode(c);
-                    resolve(node);
-                }
-            });
-        };
-        
-        toggleCollapse = function (node) {
-            if (node.children) {
-                node._children = node.children;
-                node.children = null;
-                d3.select(this).attr("r", rad * 1.5).classed("collapsed", true);
-            } else {
-                node.children = node._children;
-                node._children = null;
-                d3.select(this).attr("r", rad).classed("collapsed", false);
-            }
-            updateTree(node);
-        };
-        
-        
-        /**
-            Copies a command from source node to target node and runs the commandRunner function
-            which should essentially update the target node with any new children
-        */
-        function copyCommand(source, target, commandRunner) {
-            //sequence is to add command to tree node
-            //then to execute that command on the server for that node
-            //question is how we make sure the server has the right state
-            return addCommand(target, source.command)
-                .then(function (target) {
-                    return commandRunner(target, target.command);
-                })
-                .then(function (res) {
-                    var node = target, newChildren = target.children;
-                    //if the target is already a child of the source we need to filter it out
-                    var childCommands = source.children.filter(function (d) {
-                        return d.id !== target.id;
-                    }), promises;
-                    if (childCommands && childCommands.length) {
-                        promises = childCommands.map(function (cc, cindex) {
-                            return cc.command ? copyCommand(cc, newChildren[cindex], commandRunner)
-                                : Promise.reject("no command");
-                        });
-                        //try to resolve all the promises
-                        return Promise.all(promises);
-                    } else {
-                        return Promise.reject("no child command");
-                    }
-                });
-        }
-        
         function registerDrag() {
             drag = d3.behavior.drag().origin(function (d) {return d; });
             var ghostNode, pos;
@@ -424,9 +388,7 @@ define(function (require, exports, module) {
                     .attr("r", rad * 2).style("display", "none")
                     .attr("class", "ghost");
                 d3.select(this).attr("pointer-events", "click");
-                colorChildren(d);
                 vis.fire({type: "dragstart.node", nodeData: d, nodeEl: d3.select(this), pos: pos});
-                //d3.event.sourceEvent.stopPropagation();
             }).on("drag", function (d) {
                 //updated position of node
                 pos = d3.mouse(svg.node());
@@ -435,8 +397,6 @@ define(function (require, exports, module) {
             }).on("dragend", function (d) {
                 var tx = draggedNode.x, ty = draggedNode.y;
                 if (targetNode) {
-                    //TODO copy command to target node but first check if the current command is the active node and 
-                    //make sure it is active before excuting the command on it
                     copyCommand(TreeData.copyTree(d), targetNode, commandRunner || function (node, command) {
                         var numChildren = proofCommands.getMaxChildren(command);
                         node.children = TreeGenerator.generateRandomChildren(numChildren);
@@ -444,7 +404,6 @@ define(function (require, exports, module) {
                     }).then(function (res) {
                         console.log(res);
                     });
-                   
                     //update the tree
                     updateTree(targetNode);
                     tx = targetNode.x;
@@ -454,7 +413,6 @@ define(function (require, exports, module) {
                 
                 ghostNode.transition().duration(200).attr("cx", tx).attr("cy", ty).remove();
                 d3.select(this).attr("pointer-events", null);
-                uncolorChildren(d);
                 
                 vis.fire({type: "dragend.node", node: d, nodeEl: d3.select(this), pos: d3.mouse(svg.node())});
             });
@@ -462,53 +420,30 @@ define(function (require, exports, module) {
             d3.selectAll(".node circle.command").call(drag);
         }
         
-        function bindKeys() {
-            d3.select("body").on("keypress", function () {
-                var e = d3.event;
-                switch (e.which) {
-                case 99://c was pressed so collapse selected node
-                    d3.selectAll(".selected").each(function (d) {
-                        toggleCollapse(d);
-                    });
-                        
-                    break;
-                case 120: //x was pressed so expand selected node
-                    d3.selectAll(".selected").each(function (d) {
-                        addCommand(d, "(grind)", d3.select(this.parentNode));
-                    });
-                    break;
-                }
-            });
-        }
-        
         registerDrag();
-        updateTree(treeData.getData());
-        bindKeys();
-        
-        vis.addCommand = addCommand;
-
-        vis.registerCommandRunner = function (d) {
-            commandRunner = d;
-        };
-        
-        vis.initialise = function (session) {
-            _session = session;
-            session.addListener("statechanged", function (event) {
-                var data = event.tree.find(event.state.label) || event.tree.getData();
-                updateTree(data);
-            }).addListener("stateunchanged", function (event) {
-                console.log(event);
-                //remove the command to show that it has no effect
-                d3.select(".node.active .command").transition().duration(500).attr("r", 0)
-                    .each("end", function (d) {
-                        delete d.command;
-                        d3.select(this).remove();
-                    });
-                d3.select(".node.active .icon").remove();
-            });
-        };
+        updateTree(treeData.getData());        
     }
     
-    vis.render = render;
-    module.exports = vis;
+    TreeVis.prototype.addCommand = addCommand;
+    
+    TreeVis.prototype.registerCommandRunner = function (d) {
+        commandRunner = d;
+    };
+    
+    TreeVis.prototype.initialise = function (session) {
+        session.addListener("statechanged", function (event) {
+            var data = event.tree.find(event.state.label) || event.tree.getData();
+            updateTree(data);
+        }).addListener("stateunchanged", function (event) {
+            console.log(event);
+            //remove the command to show that it has no effect
+            d3.select(".node.active .command").transition().duration(500).attr("r", 0)
+                .each("end", function (d) {
+                    delete d.command;
+                    d3.select(this).remove();
+                });
+            d3.select(".node.active .icon").remove();
+        });
+    };
+    module.exports = TreeVis;
 });

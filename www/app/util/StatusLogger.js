@@ -22,25 +22,16 @@ define(function (require, exports, module) {
     });
 
     var StatusView = Backbone.View.extend({
+        el: el,
         initialize: function (data) {
             this.render(data);
         },
         render: function (data) {
             var t = Handlebars.compile(template);
-            d3.select(el).html(t(data.jsonrpc_result));
+            this.$el.html(t(data.jsonrpc_result));
             var h = window.outerHeight - $("#console").height();
-            d3.select("#status .content").style("height", h + "px");
-            //enable ace editor viewer for each sequent
-//            d3.select(el).selectAll(".formula")
-//                .each(function () {
-//                    var editor = ace.edit(this);
-//                    editor.setReadOnly(true);
-//                    editor.renderer.setShowPrintMargin(false);
-//                    editor.renderer.setShowGutter(false);
-//                    editor.renderer.setDisplayIndentGuides(false);
-//                    //dynamically set the height of the 
-                   
-//                });
+            $(".content", this.el).css("height", h + "px");
+            return this;
         }
     });
     
