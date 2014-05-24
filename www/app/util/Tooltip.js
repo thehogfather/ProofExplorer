@@ -9,7 +9,6 @@ define(function (require, exports, module) {
     "use strict";
     
     var Backbone = require("backbone"),
-        d3 = require("d3"),
         template  = require("text!app/templates/tooltip.hbs");
         
     var TooltipView = Backbone.View.extend({

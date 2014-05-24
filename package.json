@@ -1,4 +1,18 @@
 {
+  "name": "PVSProofExplorer",
+  "version": "0.0.1",
+  "description": "A javascript/HTML front end for interacting with proof trees.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "pvs",
+    "theorem",
+    "prover",
+    "proof tree"
+  ],
+  "author": "Patrick Oladimeji",
+  "license": "GPLv3"
   "amd": {},
   "volo": {
     "baseUrl": "www/lib",

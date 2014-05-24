@@ -9,7 +9,6 @@ define(function (require, exports, module) {
     "use strict";
     
     var template = require("text!app/templates/console.hbs"),
-        d3 = require("d3"),
         Backbone = require("backbone");
     
     var ConsoleLoggerView = Backbone.View.extend({

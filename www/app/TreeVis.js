@@ -13,7 +13,6 @@ define(function (require, exports, module) {
         eventDispatcher = require("app/util/eventDispatcher"),
         TreeData = require("app/TreeData"),
         proofCommands = require("app/util/ProofCommands"),
-        TreeGenerator = require("app/RandomTreeGenerator"),
         Tooltip = require("app/util/Tooltip");
     
     var iconsUrlBase = "css/glyphicons/png/glyphicons_",
@@ -397,11 +396,8 @@ define(function (require, exports, module) {
             }).on("dragend", function (d) {
                 var tx = draggedNode.x, ty = draggedNode.y;
                 if (targetNode) {
-                    copyCommand(TreeData.copyTree(d), targetNode, commandRunner || function (node, command) {
-                        var numChildren = proofCommands.getMaxChildren(command);
-                        node.children = TreeGenerator.generateRandomChildren(numChildren);
-                        return Promise.resolve(node);
-                    }).then(function (res) {
+                    copyCommand(TreeData.copyTree(d), targetNode, commandRunner)
+                    .then(function (res) {
                         console.log(res);
                     });
                     //update the tree
@@ -432,7 +428,7 @@ define(function (require, exports, module) {
     
     TreeVis.prototype.initialise = function (session) {
         session.addListener("statechanged", function (event) {
-            var data = event.tree.find(event.state.label) || event.tree.getData();
+            var data = event.tree.find(null, function (node) { return node.id === event.state.label; }) || event.tree.getData();
             updateTree(data);
         }).addListener("stateunchanged", function (event) {
             console.log(event);

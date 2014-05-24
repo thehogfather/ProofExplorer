@@ -3,21 +3,19 @@
  * @author Patrick Oladimeji
  * @date 4/22/14 15:32:14 PM
  */
+/*jshint unused: true*/
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, d3, require, $, brackets, window, MouseEvent, Promise */
+/*global define, $, window */
 define(function (require, exports, module) {
     "use strict";
     var d3 = require("d3"),
         TreeVis = require("app/TreeVis"),
-        TreeGenerator = require("app/RandomTreeGenerator"),
         proofCommands = require("app/util/ProofCommands"),
         PVSSession = require("app/PVSSession"),
         StatusLogger = require("app/util/StatusLogger"),
         CommandsMenu = require("app/CommandsMenu"),
-        ToolPalette  = require("app/ToolPalette"),
-        Tooltip      = require("app/util/Tooltip"),
-        nodeRad = 10;
-
+        ToolPalette  = require("app/ToolPalette");
+    
     var commands = proofCommands.getCommands(),
         draggedCommand,
         targetNodeEvent,
@@ -42,7 +40,7 @@ define(function (require, exports, module) {
     }
     
     function onTreeNodeClicked(event) {
-        
+        console.log(event);
     }
     
     function proofCommand(command) {
@@ -50,7 +48,6 @@ define(function (require, exports, module) {
     }
     
     function bindEvents() {
-        
         function processCommand(command) {
             if (command && command.trim().length) {
                 if (proofCommands.getCommands().indexOf(command) < 0) {
@@ -100,8 +97,8 @@ define(function (require, exports, module) {
             var navControlHeight = $("#navControl").height(),
                 consoleHeight = $("#console").height(),
                 bodyHeight = window.outerHeight,
-                bodyWidth = window.outerWidth,
-                browserHeader = window.screen.height - window.screen.availHeight;
+                bodyWidth = window.outerWidth;
+//                browserHeader = window.screen.height - window.screen.availHeight;
             $("#proofTree").height(bodyHeight - navControlHeight - consoleHeight);
             $("#info-div").height(bodyHeight - navControlHeight - consoleHeight);
             $(".container").width(bodyWidth - $("#tool-palette")[0].getBoundingClientRect().width);
@@ -111,7 +108,11 @@ define(function (require, exports, module) {
     }
     
     function createUI() {
-        var pad = 20, iconRad = 15, w = (iconRad * 2  + pad) * commands.length, h = iconRad * 2, colors = d3.scale.category10();
+        var pad = 20,
+            iconRad = 15;
+//        var w = (iconRad * 2  + pad) * commands.length,
+//            h = iconRad * 2,
+//            colors = d3.scale.category10();
         
         var context = "/home/chimed/pvs-github/ProofExplorer/examples",
             file = "predictability_th";
@@ -129,13 +130,13 @@ define(function (require, exports, module) {
                     return "translate(20 " + (i * (iconRad * 2 + pad)) + ")";
                 });
 
-            var button = icong.append("circle")
-                .attr("r", iconRad)
+            var button = icong.append("circle");
+            button.attr("r", iconRad)
                 .attr("cx", iconRad)
                 .attr("cy", iconRad)
-                .style("fill", function (d, i) {
+                .style("fill", function (d) {
                     return proofCommands.getColor(d.command);
-                }).style("stroke", function (d, i) {
+                }).style("stroke", function (d) {
                     return d3.rgb(proofCommands.getColor(d.command)).darker();
                 }).on("click", function (d) {
                     if (["(postpone)", "(undo)"].indexOf(d.command) > -1) {
@@ -165,7 +166,7 @@ define(function (require, exports, module) {
                     .style("display", "none");
                 draggedCommand = d;
                 d3.event.sourceEvent.stopPropagation();
-            }).on("drag", function (d) {
+            }).on("drag", function () {
                 var pos = d3.mouse(tb.node());
                 ghostNode.attr("cx", pos[0]).attr("cy", pos[1]).style("display", null);
             }).on("dragend", function (d) {
@@ -177,6 +178,7 @@ define(function (require, exports, module) {
                             if (d.command !== "(postpone)") {
                                 treeVis.addCommand(tData, d.command, d3.select(tEl.node().parentNode))
                                     .then(function (node) {
+                                        console.debug(node);
                                         var pvsCommand = proofCommand(d.command);
                                         //The sendCommand is an asynchronous call to process a command on a branch of a proof tree
                                         session.sendCommand(pvsCommand)
@@ -220,7 +222,7 @@ define(function (require, exports, module) {
             
             treeVis.registerCommandRunner(function (node, command) {
                 return session.postponeUntil(node.id)
-                    .then(function (res) {
+                    .then(function () {
                         return session.sendCommand(proofCommand(command));
                     });
             });

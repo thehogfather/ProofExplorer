@@ -46,7 +46,7 @@ define(function (require, exports, module) {
         tree.visitAll(function (node) {
             node.active = null;
         });
-        var node = tree.findDFS(stateid, null, nodeSearch(stateid));
+        var node = tree.findDFS(null, nodeSearch(stateid));
         if (node) {
             node.active = true;
             activeState = node;
@@ -86,7 +86,7 @@ define(function (require, exports, module) {
         var children, i, numSubgoals, id, newStateIndex, parent, state, childState;
         
         function removeChildren(stateName) {
-            var state = tree.findDFS(stateName, null, nodeSearch(stateName));
+            var state = tree.findDFS(null, nodeSearch(stateName));
             if (state) {
                 //visit the nodes and descendants and remove them from allSates
                 TreeData.visitAll(function (node) {
@@ -109,7 +109,7 @@ define(function (require, exports, module) {
                     children.push(childState);
                 }
                 //add generated children to tree
-                parent = tree.findDFS(oldState.label, null, nodeSearch(oldState.label));
+                parent = tree.findDFS(null, nodeSearch(oldState.label));
                 if (parent) {
                     parent.children = children;
                 } else {console.log("could not find parent"); }
@@ -123,7 +123,7 @@ define(function (require, exports, module) {
         } else if (oldState && oldState.label === newState.label) {
             //if any of the sequents in the new state are marked as changed then
             //create a branch anyway to show that a command has been added to the parent
-            state = tree.findDFS(newState.label, null, function (node) {
+            state = tree.findDFS(null, function (node) {
                 return node.formula ? node.formula === sequentString(newState) && node.name === newState.label
                     : node.name === newState.label;
             });
@@ -132,7 +132,7 @@ define(function (require, exports, module) {
                 delete state.command;
                 setActiveNode(state.name, tree);
             } else {
-                state = tree.findDFS(newState.label, null, nodeSearch(newState.label));
+                state = tree.findDFS(null, nodeSearch(newState.label));
                 if (state) {
                     childState = {id: state.id + ".0", name: state.name};
                     state.children = [childState];
@@ -156,17 +156,25 @@ define(function (require, exports, module) {
     */
     function stateUnchanged(state, previousState) {
         return state.label === previousState.label && state.commentary ? state.commentary.some(function (comment) {
-            return comment.trim().toLowerCase().indexOf("no change on") === 0 || comment.trim().toLowerCase().indexOf("postponing") === 0;
+            return comment.trim().toLowerCase().indexOf("no change on") === 0 ||
+                comment.trim().toLowerCase().indexOf("postponing") === 0;
         }) : false;
     }
     
+    /**
+    
+    */
     function PVSSession() {
         eventDispatcher(this);//enable session object to dispatch events
         allStates = {};
         ps = this;
     }
     /**
-         Updates the current state using the data from the pvsresponse 
+         Updates the current state using the data from the pvsresponse. It fires
+         either a `statechanged` or a `stateunchanged` event to signal the status of the prooftree
+         to any event listeners.
+         @param {object} res a jsonrpc result object containing information about the proof state
+         @returns {Promise} a promise that resolves with the jsonrpc result object
     */
     PVSSession.prototype.updateCurrentState = function (res) {
         var s = res.jsonrpc_result.result, previousState = currentState, ps = this;
@@ -182,7 +190,10 @@ define(function (require, exports, module) {
     };
 
     /**
-     Initiates a pvs session with the server
+        Initiates a pvs session with the server
+        @param {string} context the path to set as context for the server. This is typically a folder containing pvs source files
+        @param {string} file The path (relative to context) to the file to typecheck before beginning the Proof explorer
+        @returns {Promise} a promise that resolves when context has been set on server and the file has been typechecked.
     */
     PVSSession.prototype.begin = function (context, file) {
         return comm.changeContext(context)
@@ -193,7 +204,11 @@ define(function (require, exports, module) {
     };
     
     /**
-        Sends a request to proove a formula in the given theory file
+        Sends a request to proove a formula in the given theory file. This function fires a 
+        "treecreated" event to signal the creation of a prooftree data.
+        @param {string} formula the name of the formula to prove
+        @param {string} theory the name of the theory from which the formula should be proven
+        @returns {Promise} a promise that resolves when the formula is proven
     */
     PVSSession.prototype.proveFormula = function (formula, theory) {
         var ps = this;
@@ -207,7 +222,12 @@ define(function (require, exports, module) {
                 return Promise.resolve(res);
             });
     };
-    
+    /**
+        Sends the specified PVS [proof] command to the server. When the result has been received from the server, the current state
+        of the tree is updated.
+        @param {object} command a command object
+        @returns {Promise} a promise that resolves when the result of executing the command on the server returns
+    */
     PVSSession.prototype.sendCommand = function (command) {
         var ps = this;
         return comm.sendCommand(command)
@@ -215,7 +235,10 @@ define(function (require, exports, module) {
                 return ps.updateCurrentState(res);
             });
     };
-    
+    /**
+        wrapper function for sending the postpone command to the server.
+        @returns {Promise} a promise that resolves when the server sends a response.
+    */
     PVSSession.prototype.postpone = function () {
         var ps = this;
         return comm.sendCommand({method: "proof-command", params: ["(postpone)"]})
@@ -223,7 +246,11 @@ define(function (require, exports, module) {
                 return ps.updateCurrentState(res);
             });
     };
-    
+    /**
+     Utility function for running a repeated postpone until the target node has been reached.
+     @param {string} targetName the label of the node to postpone to
+     @return {Promise} a promise that resolves when the postpone target has been reached
+    */
     PVSSession.prototype.postponeUntil = function (targetName) {
         var ps = this, currentlyActiveName = activeState.name;
         function postpone() {
@@ -243,7 +270,9 @@ define(function (require, exports, module) {
             return postpone();
         }
     };
-    
+    /**
+        Gets the currently active state in the prooftree
+    */
     PVSSession.prototype.getActiveState = function () {
         return activeState;
     };

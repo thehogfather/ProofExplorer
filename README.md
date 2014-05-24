@@ -1,3 +1,11 @@
+#Proof Explorer for PVS
+This project is a front end for interacting with [PVS](http://pvs.csl.sri.com/) especially for visualisation and manipulation of proof trees in the PVS system.
+
+###Features include
+1. Visual representation of proof tree
+2. Collapse and expand proof tree branches
+3. Drag and drop proof commands between branches.
+
 This web project has the following setup:
 
 * www/ - the web assets for the project
@@ -14,9 +22,3 @@ To optimize, run:
 That build command creates an optimized version of the project in a
 **www-built** directory. The app.js file will be optimized to include
 all of its dependencies.
-
-For more information on the optimizer:
-http://requirejs.org/docs/optimization.html
-
-For more information on using requirejs:
-http://requirejs.org/docs/api.html

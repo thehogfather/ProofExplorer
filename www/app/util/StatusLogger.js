@@ -3,16 +3,15 @@
  * @author Patrick Oladimeji
  * @date 5/5/14 8:40:53 AM
  */
+/*jshint unused: true, undef: true*/
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, d3, require, $, brackets, window, Handlebars */
+/*global define, $, window, Handlebars */
 define(function (require, exports, module) {
     "use strict";
     
     var el = "#status";
     var Backbone = require("backbone"),
-        d3 = require("d3"),
-        template  = require("text!app/templates/status.hbs"),
-        ace = require("ace/ace");
+        template  = require("text!app/templates/status.hbs");
     
     Handlebars.registerHelper("sequentLabel", function (obj) {
         var open = obj.changed  === "true" ? "{" : "[",

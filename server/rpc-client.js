@@ -23,10 +23,11 @@
     
     var expressServer = express();//this is how the client sends messages to the PVS server
     expressServer.use(bodyParser());
+    expressServer.use(express.static("../www"));
     
     var httpServer = http.createServer(expressServer);
     //declare hosts and ports
-    var pvsHost = "172.16.63.129",// "192.168.1.100",
+    var pvsHost = "172.16.63.130",// "192.168.1.100",
         pvsPort = 22334,
         xmlRPCRequestPath = "/RPC2",
         callbackHost = "172.16.63.1",//"192.168.1.98" ,
@@ -68,7 +69,6 @@
                 case "yes_no":
                 case "dialog":
                     logger.log(data);
-//                    callback(null, JSON.stringify({jsonrpc_result: {id: data.id, jsonrpc: data.jsonrpc, result: "yes"}}));
                     processClientDialog(clientSocket, data, callback);
                     break;
                 default:

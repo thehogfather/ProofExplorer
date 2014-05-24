@@ -1,5 +1,6 @@
 /**
  * Demostration of proof tree interaction and visualisation (concept)
+ * This is used mainly for testing
  * @author Patrick Oladimeji
  * @date 4/9/14 9:37:37 AM
  */
