@@ -11,7 +11,13 @@ define(function (require, exports, module) {
     
     var el = "#status";
     var Backbone = require("backbone"),
-        template  = require("text!app/templates/status.hbs");
+        template  = require("text!app/templates/status.hbs"),
+        CodeMirror = require("cm/lib/codemirror");
+    
+    require("cm/addon/fold/foldcode");
+    require("cm/addon/fold/foldgutter");
+    require("cm/addon/fold/indentFold");
+    require("cm/mode/pvs/pvs");
     
     Handlebars.registerHelper("sequentLabel", function (obj) {
         var open = obj.changed  === "true" ? "{" : "[",
@@ -30,6 +36,17 @@ define(function (require, exports, module) {
             this.$el.html(t(data.jsonrpc_result));
             var h = window.outerHeight - $("#console").height();
             $(".content", this.el).css("height", h + "px");
+            //add codemirror to view the formula
+            if ($(".formula", this.el)) {
+                $(".formula", this.el).each(function (n, el) {
+                    CodeMirror.fromTextArea(el, {
+                        mode: "pvs",
+                        foldGutter: true,
+                        lineNumbers: false,
+                        gutters: ["CodeMirror-foldgutter"]
+                    });
+                });
+            }
             return this;
         }
     });

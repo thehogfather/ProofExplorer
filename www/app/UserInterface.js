@@ -3,7 +3,7 @@
  * @author Patrick Oladimeji
  * @date 4/22/14 15:32:14 PM
  */
-/*jshint unused: true*/
+/*jshint unused: true, undef: true*/
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
 /*global define, $, window */
 define(function (require, exports, module) {
@@ -20,7 +20,7 @@ define(function (require, exports, module) {
         draggedCommand,
         targetNodeEvent,
         session = new PVSSession(),
-        treeVis;
+        treeVis, viewportControls;
     
     function onTreeNodeMouseOver(event) {
         if (draggedCommand) {
@@ -78,6 +78,9 @@ define(function (require, exports, module) {
                     .then(function (res) {
                         StatusLogger.log(res);
                     });
+            }).addListener("transform", function (event) {
+                //show scale and translate data
+                viewportControls.select(".scale").html("Zoom: " + Math.round(event.scale * 100) + "%");
             });
         
         //add event for free text
@@ -92,16 +95,13 @@ define(function (require, exports, module) {
         });
         
         //add listener for window resize so that the height of the components on the interface are properly redistributed
-        function windowResized(event) {
-            console.log(event);
-            var navControlHeight = $("#navControl").height(),
-                consoleHeight = $("#console").height(),
-                bodyHeight = window.outerHeight,
-                bodyWidth = window.outerWidth;
+        function windowResized() {
+            var menubarHeight = $("#menubar").height(),
+                bodyHeight = $(window).height(),
+                bottomNavHeight = $("#bottom-nav").height();
 //                browserHeader = window.screen.height - window.screen.availHeight;
-            $("#proofTree").height(bodyHeight - navControlHeight - consoleHeight);
-            $("#info-div").height(bodyHeight - navControlHeight - consoleHeight);
-            $(".container").width(bodyWidth - $("#tool-palette")[0].getBoundingClientRect().width);
+            $("#proofTree").height(bodyHeight - menubarHeight - bottomNavHeight);
+            $("#status").css("max-height", bodyHeight - menubarHeight - bottomNavHeight);
         }
         window.onresize = windowResized;
         windowResized();
@@ -109,11 +109,9 @@ define(function (require, exports, module) {
     
     function createUI() {
         var pad = 20,
-            iconRad = 15;
-//        var w = (iconRad * 2  + pad) * commands.length,
-//            h = iconRad * 2,
-//            colors = d3.scale.category10();
-        
+            iconRad = 15,
+            viewportControlHeight = 40,
+            viewportControlWidth = 90;
         var context = "/home/chimed/pvs-github/ProofExplorer/examples",
             file = "predictability_th";
         
@@ -123,11 +121,15 @@ define(function (require, exports, module) {
                 return {x: 0, y: 0, command: d};
             });
 
-            var tb = d3.select("svg").insert("g", "g");
+            var tb = d3.select("svg").insert("g", "g").attr("transform", "translate(0  " + viewportControlHeight + ")");
+            viewportControls = d3.select("svg").insert("g", "g").classed("viewport-control", true);
+            viewportControls.append("foreignObject").attr("x", 0).attr("y", 0).attr("width", viewportControlWidth).attr("height", viewportControlHeight)
+                .append("xhtml:span").classed("scale", true);
+            
             var icong = tb.selectAll(".button").data(data).enter()
                 .append("g").attr("class", "button")
                 .attr("transform", function (d, i) {
-                    return "translate(20 " + (i * (iconRad * 2 + pad)) + ")";
+                    return "translate(" + pad + " " + (i * (iconRad * 2 + pad)) + ")";
                 });
 
             var button = icong.append("circle");
@@ -150,6 +152,13 @@ define(function (require, exports, module) {
                 .attr("x", iconRad)
                 .attr("text-anchor", "middle")
                 .text(function (d) { return d.command; });
+            
+            var gBR = tb.node().getBoundingClientRect();
+            tb.insert("rect", "g.button").attr("y", -pad).attr("x", -pad)
+                .attr("rx", iconRad).attr("ry", iconRad)
+                .classed("recent-commands", true)
+                .attr("width", gBR.width + (2 * pad)).attr("height", gBR.height + (2 * pad));
+            
             //register drag listener
             var drag = d3.behavior.drag().origin(function (d) {
                 return d;

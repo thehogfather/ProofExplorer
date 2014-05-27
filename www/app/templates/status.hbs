@@ -10,13 +10,13 @@
                     {{#each result.sequent.antecedents}}
                     <div> 
                         <span>{{sequentLabel this}}</span>
-                        <pre class="formula">{{formula}}</pre>
+                        <textarea class="formula">{{formula}}</textarea>
                     </div>
                     {{/each}}
                 </div>
             </div>
             {{/if}}
-
+            <hr/>
             {{#if result.sequent.succedents}}
             <div class="succedents">
                 <h6>succedents</h6>
@@ -24,7 +24,7 @@
                     {{#each result.sequent.succedents}}                
                     <div> 
                         <span class="sequent-label">{{sequentLabel this}}</span>
-                        <pre class="formula">{{formula}}</pre>
+                        <textarea class="formula">{{formula}}</textarea>
                     </div>
                     {{/each}}
                 </div>
@@ -32,10 +32,12 @@
             {{/if}}
         </div>
         {{/if}}
+<!--
         <div class="commentary">
             {{#each result.commentary}}
             <p>{{this}}</p>
             {{/each}}
         </div>
+-->
     </div>
 </div>

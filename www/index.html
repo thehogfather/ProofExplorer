@@ -8,24 +8,21 @@
         <script src="lib/jquery.js"></script>
         <script src="lib/bootstrap.js"></script>
         <link type="text/css" rel="stylesheet" href="css/bootstrap.css"/>
+        <link type="text/css" rel="stylesheet" href="css/font-awesome.min.css"/>
+        <link type="text/css" rel="stylesheet" href="lib/cm/lib/codemirror.css"/>
+        <link type="text/css" rel="stylesheet" href="lib/cm/addon/fold/foldgutter.css"/>
         <link type="text/css" rel="stylesheet" href="css/style.css"/>
+        <link type="text/css" rel="stylesheet" href="css/prooftree.css"/>
+        <title>PVS Proof Explorer</title>
     </head>
     <body>
-        <!--
-            <div class="sidebar">
-                <div class="view-toggle"><span class="glyphicon glyphicon-wrench"></span></div>
-                <div class="view-toggle"></div>
-                <div class="view-toggle"><span class="glyphicon glyphicon-book"></span></div>
-            </div>
--->
-       <div class="col-md-12 menu-wrap"> <div id="menubar" class="center-block"></div></div>
-
-        <div id="tool-palette">
-
+        <div class="col-md-12 menu-wrap">
+           <div id="menubar" class="center-block"></div>
         </div>
-        <div class="container center-block">
+
+        
+        <div class="container-fluid center-block">
             <div id="content-wrapper">
-                
                 <div class="row">
                     <div class="col-md-7">
                         <div id="toolbox" class="input-group">
@@ -43,11 +40,25 @@
             </div>
  
         </div>
-        <div id="console" class="row center-block">
-            <h5 class="underline">Console</h5>
-            <ul id="console-list" class="list-group">
-
+        
+        <nav id="bottom-nav" class="navbar navbar-default navbar-fixed-bottom" role="region">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#tool-palette" data-toggle="tab">Commands</a></li>
+                <li><a href="#console" data-toggle="tab">Console</a></li>
             </ul>
-        </div>
+            <div id="bottom-panel" class="tab-content">
+                <div id="tool-palette" class="tab-pane active">
+
+                </div>
+                <div id="console" class="tab-pane">
+                    <ul id="console-list" class="list-group">
+
+                    </ul>
+                </div>
+            </div>
+        </nav>
+       
+        
+        
     </body>
 </html>

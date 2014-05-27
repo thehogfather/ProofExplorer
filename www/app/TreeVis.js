@@ -72,6 +72,7 @@ define(function (require, exports, module) {
     
     function rescale() {
         svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")");
+        vis.fire({type: "transform", scale: d3.event.scale, translate: d3.event.translate});
     }
     
     var onClick = function (d) {
@@ -119,6 +120,13 @@ define(function (require, exports, module) {
             if (!node) {
                 reject({command: command});
             } else {
+                var p = node.parent;
+                //need to make sure that collapsed node are expanded before applying commands            
+                while (p && p._children) {
+                    p.children = p._children;
+                    p = p.parent;
+                }
+                
                 command = command || "(grind)";
                 node.command = command;
                 node.commandLabel = commandLabel;
