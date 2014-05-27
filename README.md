@@ -6,6 +6,7 @@ This project is a front end for interacting with [PVS](http://pvs.csl.sri.com/) 
 2. Collapse and expand proof tree branches
 3. Drag and drop proof commands between branches.
 
+![Screenshot](screenshot.png?raw=true)
 This web project has the following setup:
 
 * www/ - the web assets for the project
