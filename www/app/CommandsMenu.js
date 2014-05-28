@@ -4,13 +4,12 @@
  * @date 5/9/14 9:30:30 AM
  */
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, d3, require, $, brackets, window, Handlebars*/
+/*global define, Handlebars*/
 define(function (require, exports, module) {
     "use strict";
 
     var commandsMap = require("text!app/templates/commandHeirarchy.json"),
         template = require("text!app/templates/commandMenus.hbs"),
-        d3 = require("d3"),
         Backbone = require("backbone");
     
     function parseCommands(str) {
@@ -48,7 +47,7 @@ define(function (require, exports, module) {
     });
     
     module.exports = {
-        create: function (_session) {
+        create: function () {
             var model = parseCommands(commandsMap);
             return new CommandsMenuView(model);
         }

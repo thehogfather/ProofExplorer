@@ -5,7 +5,7 @@
  */
 /*jshint unused: true, undef: true*/
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, $, window */
+/*global define, $, window, Handlebars */
 define(function (require, exports, module) {
     "use strict";
     var d3 = require("d3"),
@@ -14,7 +14,8 @@ define(function (require, exports, module) {
         PVSSession = require("app/PVSSession"),
         StatusLogger = require("app/util/StatusLogger"),
         CommandsMenu = require("app/CommandsMenu"),
-        ToolPalette  = require("app/ToolPalette");
+        ToolPalette  = require("app/ToolPalette"),
+        fileListTemplate = require("text!app/templates/filelist.hbs");
     
     var commands = proofCommands.getCommands(),
         draggedCommand,
@@ -47,13 +48,48 @@ define(function (require, exports, module) {
         return {method: "proof-command", params: [command]};
     }
     
+    function populateTheoryFileList(files) {
+        var t = Handlebars.compile(fileListTemplate);
+        var html = t(files);
+        $("#theory-files ul").html(html);
+        //add listener for setting the selected theory file
+        $("#theory-files li").on("click", function () {
+            $("#theory-files button span.filename").html($(this).html());
+        });
+    }
+    
     function bindToolBoxEvents() {
-        d3.select("#change-context").on("click", function () {
-            var context = d3.select("#txt-context").property("value");
+        d3.select("#txt-context").on("blur", function () {
+            var context = d3.select(this).property("value");
             session.changeContext(context)
-                .then(function () {
-                    
+                .then(function (res) {
+                    console.log(res);
+                    populateTheoryFileList(res.files);
                 });
+        });
+        
+        d3.select("#typecheck").on("click", function () {
+            var file = d3.select("#theory-files button span.filename").text().split(".")[0];
+            if (file) {
+                session.typeCheck(file)
+                    .then(function (res) {
+                        console.log(res);
+                    });
+            }
+        });
+        
+        d3.select("#prove-formula").on("click", function () {
+            var formula = d3.select("#txt-formula").property("value");
+            var theory = d3.select("#theory-files button span.filename").text().split(".")[0];
+            if (formula && theory) {
+                session.typeCheck(theory)
+                    .then(function (res) {
+                        StatusLogger.log(res);
+                        return session.proveFormula(formula, theory);
+                    }).then(function (res) {
+                        StatusLogger.log(res);
+                    });
+            }
         });
     }
     
@@ -122,8 +158,8 @@ define(function (require, exports, module) {
             iconRad = 15,
             viewportControlHeight = 40,
             viewportControlWidth = 90;
-        var context = "/home/chimed/pvs-github/ProofExplorer/examples",
-            file = "predictability_th";
+//        var context = "../examples",
+//            file = "predictability_th";
         
         function createControls() {
             //map the string data to create objects whose command attributes is the string
@@ -221,14 +257,14 @@ define(function (require, exports, module) {
             txt.node().focus();
         }
          //begin the session
-        session.begin(context, file)
-            .then(function (res) {
-                StatusLogger.log(res);
-                return session.proveFormula("dn_button_predictable", "predictability_th");
-            }).then(function (res) {
-                StatusLogger.log(res);
-            });
-        
+//        session.begin(context, file)
+//            .then(function (res) {
+//                StatusLogger.log(res);
+//                return session.proveFormula("dn_button_predictable", "predictability_th");
+//            }).then(function (res) {
+//                StatusLogger.log(res);
+//            });
+//        
         session.addListener("treecreated", function (event) {
             treeVis = new TreeVis(event.tree);
             ToolPalette.create()

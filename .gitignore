@@ -1,5 +1,6 @@
 www-built
 www-ghpages
 node_modules
-ace
-ace_temp
+pvsbin
+*.prf
+.pvscontext

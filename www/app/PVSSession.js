@@ -4,7 +4,7 @@
  * @date 4/24/14 11:18:36 AM
  */
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, d3, require, $, brackets, window, Promise */
+/*global define,  Promise */
 define(function (require, exports, module) {
     "use strict";
     var comm = require("app/PVSComm"),
@@ -23,16 +23,6 @@ define(function (require, exports, module) {
         return antecedents.map(function (d) {return d.formula; }).join("").concat(succedents.map(function (d) {return d.formula; }).join(""));
     }
 
-    function anySequentChanged(state) {
-        var antecedents = (state.sequent && state.sequent.antecedents) || [],
-            succedents = (state.sequent && state.sequent.succedents) || [];
-        return antecedents.some(function (d) {
-            return d.changed === "true";
-        }) || succedents.some(function (d) {
-            return d.changed === "true";
-        });
-    }
-    
     function nodeSearch(nodeid) {
         return function (node) {
             return nodeid === node.id || nodeid === node.name;
@@ -83,7 +73,7 @@ define(function (require, exports, module) {
     */
     function updateTree(tree, oldState, newState) {
        
-        var children, i, numSubgoals, id, newStateIndex, parent, state, childState;
+        var children, i, numSubgoals, id, parent, state, childState;
         
         function removeChildren(stateName) {
             var state = tree.findDFS(null, nodeSearch(stateName));
@@ -197,7 +187,7 @@ define(function (require, exports, module) {
     */
     PVSSession.prototype.begin = function (context, file) {
         return comm.changeContext(context)
-            .then(function (res) {
+            .then(function () {
                 //maybe do something with res and then typecheck
                 return comm.typeCheck(file);
             });

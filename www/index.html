@@ -19,37 +19,44 @@
         <div class="col-md-12 menu-wrap">
            <div id="menubar" class="center-block"></div>
         </div>
-
-        
         <div class="container-fluid center-block">
             <div id="content-wrapper">
                 <div class="row">
                     <div class="col-md-7">
                         <div id="toolbox" >
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div id="setup-group" class="input-group">
-                                        <input type="text" id="txt-context" class="form-control" placeholder="set source folder"/>
-                                        <span id="change-context" class="input-group-addon">Change Context</span>
+                            <div class="row" id="setup-group">
+                                <div class="col-md-4">
+                                    <div class="input-group input-group-sm">
+                                        <span id="change-context" class="input-group-addon">Context</span>
+                                        <input type="text" id="txt-context" class="form-control" placeholder="set source folder" value="../examples"/>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-3">
                                     <div class="input-group">
-                                        <div class="input-group-btn">
-                                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                                Theory File <span class="caret"></span>
+                                        <span id="typecheck" class="input-group-addon">Theory</span>
+                                        <div class="input-group-btn input-group-sm" id="theory-files">
+                                            <button type="button" class="btn btn-default dropdown-toggle form-control" data-toggle="dropdown">
+                                                <span class="filename"> Select File </span> <span class="caret"></span>
                                             </button>
-                                            <ul class="dropdown-menu" id="theory-files">
+                                            <ul class="dropdown-menu" >
 
                                             </ul>
                                         </div>
-                                        <input type="text" id="txt-select-theory-file" class="form-control" placeholder="select theory file"/>
                                     </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="input-group input-group-sm">
+                                        <span  class="input-group-addon">Formula</span>
+                                        <input type="text" id="txt-formula" class="form-control input-sm" placeholder=""/>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <button id="prove-formula"` type="button" class="btn btn-primary btn-block btn-sm">Prove Formula</button>    
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-12">
-                                    <div class="input-group" id="command-group">
+                                    <div class="input-group input-group-sm" id="command-group">
                                         <input type="text" id="txtCommand" class="form-control" placeholder="Enter PVS command here"/>
                                         <span id="send" class="input-group-addon">Send</span>
                                     </div>

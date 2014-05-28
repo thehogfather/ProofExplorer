@@ -5,11 +5,10 @@
  * @date 4/22/14 12:22:13 PM
  */
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, d3, require, $, brackets, window, Promise */
+/*global define, Promise */
 define(function (require, exports, module) {
     "use strict";
-    var server = "http://localhost:8083/pvs",
-        uuid = require("app/util/uuidGenerator"),
+    var uuid = require("app/util/uuidGenerator"),
         WSClient = require("app/WebSocketClient");
     /**
         Sends a pvs command to the server. This is done over a websocket which connect
@@ -39,12 +38,10 @@ define(function (require, exports, module) {
     */
     function sendResponse(res) {
         console.log(res);
-        return new Promise(function (resolve, reject) {
+        return new Promise(function (resolve) {
             res.type = "PVSResponse";
             WSClient.getInstance()
-                .send(res, function (err, res) {
-                    
-                });
+                .send(res);
             resolve("sent");
         });
     }
@@ -58,7 +55,16 @@ define(function (require, exports, module) {
             return Promise.reject("context must be defined.");
         }
         var cmd = {method: "change-context", params: [context], id: uuid()};
-        return sendCommand(cmd);
+        return new Promise(function (resolve, reject) {
+            WSClient.getInstance()
+                .send({type: "changecontext", request: cmd}, function (err, res) {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(res);
+                    }
+                });
+        });
     }
     
     /**

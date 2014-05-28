@@ -131,3 +131,8 @@ div#tooltip.alert{
     margin-top: -10px;
     height: 24px;
 }
+
+#setup-group {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}

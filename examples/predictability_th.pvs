@@ -1,0 +1,270 @@
+type_defs_th: THEORY
+ BEGIN
+
+  %-- constants
+  max: posreal = 99999;
+
+  %-- type definitions
+  Display: TYPE = {r: nonneg_real | r <= max};
+  Cursor: TYPE = {i: int | i >= -2 AND i <= 4};
+  Memory: DATATYPE
+           BEGIN
+            new_mem(value: Display): valid?
+            NA: NA?
+           END Memory;
+  CONVERSION new_mem;
+  Device_State: TYPE = [# display: Display, cursor: Cursor, memory: Memory #];
+  new_Device_State(disp: Display, cur: Cursor, mem: Memory): Device_State = 
+    (# display := disp, cursor := cur, memory := mem #);
+
+  %-- utility functions
+  pow10(i: int): real = ^(10,i);
+
+  min_value(val: Display, i: Cursor): Display =
+        IF i >= 3 AND val >= 1 THEN 1
+        ELSIF (i >= 0 AND i < 3) OR (i < 0 AND val >= 0.1) THEN 0.1
+        ELSE 0
+        ENDIF;
+
+  min_position(val: Display): Cursor =
+        COND val < 100 -> -2,
+             val >= 100 AND val < 1000 -> -1,
+             val >= 1000 -> 0
+        ENDCOND;
+
+  limit(min_val: Display): [real -> real] =
+      LAMBDA (val: real):
+        IF val > 0 AND val < min_val THEN min_val ELSE val ENDIF;
+
+ END type_defs_th
+
+
+bbraun_th: THEORY
+ BEGIN
+  IMPORTING type_defs_th 
+
+  %-- left button
+  device_lf: [Device_State -> Device_State] =
+      LAMBDA (st: Device_State):
+        LET val = display(st), 
+            cur = cursor(st),
+            mem = memory(st) 
+         IN
+          IF cur < 4 
+           THEN new_Device_State(val, cur + 1, NA)
+          ELSE % cur = 4 
+           new_Device_State(val, cur, mem)
+          ENDIF
+
+  %-- right button
+  device_rt: [Device_State -> Device_State] =
+      LAMBDA (st: Device_State):
+        LET val = display(st),
+            cur = cursor(st),
+            mem = memory(st),
+            min_pos = min_position(val)
+          IN
+           IF cur > min_pos 
+            THEN new_Device_State(val, cur - 1, NA)
+           ELSE % cur <= min_pos
+            new_Device_State(val, cur, mem)
+          ENDIF
+
+
+  %-- down button
+  device_dn(st: Device_State): Device_State = 
+        LET val: Display = display(st),
+            cur: Cursor  = cursor(st),
+            mem: Memory  = memory(st),
+            min_val: Display = min_value(val, cur),
+            new_val: real = val - pow10(cur),
+            new_mem: Memory = IF cur >= 0 THEN new_mem(pow10(cur)) ELSE mem ENDIF
+         IN
+          IF val <= min_val 
+           THEN new_Device_State(0, cur, NA)
+          ELSE %val > min_val  
+           IF new_val = 0 
+            THEN new_Device_State(0, cur, NA)
+           ELSIF new_val /= 0 AND new_val >= min_val
+            THEN LET new_val = limit(min_val)(new_val) IN
+                  IF valid?(mem)
+                   THEN new_Device_State(value(mem), cur, NA)
+                  ELSIF new_val < min_val
+                   THEN new_Device_State(new_val, cur, new_mem)
+                  ELSE new_Device_State(new_val, cur, NA) ENDIF
+           ELSE % new_val /= 0 AND new_val < min_val
+            IF valid?(mem) 
+             THEN new_Device_State(min_val, cur, NA)
+            ELSE new_Device_State(min_val, cur, new_mem) ENDIF
+           ENDIF
+          ENDIF
+
+  %-- up button
+  device_up(st: Device_State): Device_State =
+        LET val: Display = display(st),
+            cur: Cursor  = cursor(st),
+            mem: Memory  = memory(st),
+            new_val =
+              COND val + pow10(cur) < 0.1       -> 0.1,
+                   val + pow10(cur) >= 0.1 
+                    AND val + pow10(cur) < 100  -> val + pow10(cur),
+                   val + pow10(cur) >= 100 
+                    AND val + pow10(cur) < 1000 -> floor((val + pow10(cur)) * 10) / 10,
+                   val + pow10(cur) >= 1000     -> floor(val + pow10(cur))
+              ENDCOND,
+            new_mem = new_mem(val)
+          IN
+           IF new_val > max
+            THEN IF valid?(mem)
+                  THEN new_Device_State(max, cur, mem)
+                 ELSE new_Device_State(max, cur, new_mem) ENDIF
+           ELSE % new_val <= max
+            IF valid?(mem)
+             THEN new_Device_State(value(mem), cur, NA)
+            ELSE new_Device_State(new_val, cur, NA) ENDIF
+          ENDIF
+
+ END bbraun_th
+
+
+
+mental_model_th: THEORY
+ BEGIN
+  IMPORTING bbraun_th
+
+  Observable_State: TYPE = [# display: Display, cursor: Cursor #]
+  new_Observable_State(val: Display, cur: Cursor): Observable_State =
+   (# display := val, cursor := cur #)
+
+  %-- left button
+  user_lf(st: Observable_State): Observable_State =
+        LET val = display(st), 
+            cur = cursor(st)
+         IN
+          IF cur < 4 
+           THEN new_Observable_State(val, cur + 1)
+          ELSE % cur = 4 
+           new_Observable_State(val, cur)
+          ENDIF
+
+  %-- right button
+  user_rt(st: Observable_State): Observable_State =
+        LET val = display(st),
+            cur = cursor(st),
+            min_pos = min_position(val)
+          IN
+           IF cur > min_pos
+            THEN new_Observable_State(val, cur - 1)
+           ELSE % cur <= min_pos
+            new_Observable_State(val, cur)
+          ENDIF
+
+  %-- down button
+  user_dn(st: Observable_State): Observable_State =
+        LET val: Display = display(st),
+            cur: Cursor = cursor(st),
+            min_val: Display = min_value(val, cur),
+            new_val: real = val - pow10(cur)
+          IN
+           IF val <= min_val 
+            THEN new_Observable_State(0, cur)
+           ELSE % val > min_val  
+            IF new_val = 0
+             THEN new_Observable_State(0, cur)
+            ELSIF new_val /= 0 AND new_val >= min_val
+             THEN LET new_val = limit(min_val)(new_val) IN
+                   IF new_val < min_val
+                    THEN new_Observable_State(new_val, cur)
+                   ELSE new_Observable_State(new_val, cur) ENDIF
+             ELSE % new_val /= 0 AND new_val < min_val
+              new_Observable_State(min_val, cur) ENDIF
+           ENDIF
+
+  %-- up button
+  user_up(st: Observable_State): Observable_State =
+        LET val: Display = display(st),
+            cur: Cursor = cursor(st),
+            new_val =
+              COND val + pow10(cur) < 0.1       -> 0.1,
+                   val + pow10(cur) >= 0.1 
+                    AND val + pow10(cur) < 100  -> val + pow10(cur),
+                   val + pow10(cur) >= 100 
+                    AND val + pow10(cur) < 1000 -> floor((val + pow10(cur)) * 10) / 10,
+                   val + pow10(cur) >= 1000     -> floor(val + pow10(cur))
+              ENDCOND,
+            new_mem = new_mem(val)
+          IN
+          IF new_val > max 
+           THEN new_Observable_State(max, cur)
+          ELSE % new_val <= max
+           new_Observable_State(new_val, cur)
+          ENDIF
+
+ END mental_model_th
+
+
+
+predictability_th: THEORY
+ BEGIN
+  IMPORTING bbraun_th, mental_model_th
+
+  val: Display = 98322
+
+  observable_state: [ Device_State -> Observable_State ] =
+    LAMBDA(st: Device_State): (# display := display(st), cursor := cursor(st) #)
+  
+  %-- useful invariants for reachable states
+  invariant_1: AXIOM
+    FORALL (st: Device_State):
+      valid?(memory(st)) IMPLIES
+       (display(st) = max OR
+         (IF cursor(st) >= 3 THEN display(st) = 1
+          ELSE display(st) = 0.1
+          ENDIF))
+
+  invariant_2: AXIOM
+    FORALL (st: Device_State):
+      (valid?(memory(st)) AND display(st) < max) IMPLIES
+       (value(memory(st)) = 1 OR value(memory(st)) = 0.1)
+
+  reachable_states_invariant_2: AXIOM
+    FORALL(st: Device_State):
+    	valid?(memory(st)) IMPLIES (display(st) = max OR display(st) = 1 OR display(st) = 0.1)
+
+  %-- proved
+  left_button_predictable: THEOREM
+    FORALL (st: Device_State):
+      observable_state(device_lf(st)) = user_lf(observable_state(st));
+
+  %-- proved
+  right_button_predictable: THEOREM
+    FORALL (st: Device_State):
+      observable_state(device_rt(st)) = user_rt(observable_state(st));
+
+  %-- FAILS
+  up_button_predictable: THEOREM
+    FORALL (st: Device_State):
+      observable_state(device_up(st)) = user_up(observable_state(st));
+
+  state1: Device_State = (# display := 1, memory := pow10(4), cursor := 4 #)
+
+  %-- FAILS
+  dn_button_predictable: THEOREM
+    FORALL (st: Device_State):
+      observable_state(device_dn(st)) = user_dn(observable_state(st));
+
+  %-- display(st!1) = 99999
+  %   cursor(st!1) >= 3
+  %   valid?(memory(st!1))
+  state_max: Device_State = (# display := max, memory := val, cursor := 4 #)
+
+
+  %-- other defs
+  V: real
+  left_button_weak_predictability: THEOREM
+    FORALL (st: Device_State):
+      abs(observable_state(device_lf(st))`display - user_lf(observable_state(st))`display) < V
+
+ END predictability_th
+
+

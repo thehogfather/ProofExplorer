@@ -5,7 +5,7 @@
  * @date 6/4/13 18:50:25 PM
  */
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, d3, require, $, brackets, window, MouseEvent, WebSocket, Promise*/
+/*global define, WebSocket, Promise*/
 define(function (require, exports, module) {
     "use strict";
     var property = require("app/util/property"),
@@ -16,7 +16,6 @@ define(function (require, exports, module) {
     module.exports = function () {
         var o = eventDispatcher({}), ws, callbackRegistry = {};
         o.url = property.call(o, "ws://localhost");
-		o.port = property.call(o);
         /**
          * Attempts to logon to the websocket server
          * returns a promise that resolves when the connection has been opened
@@ -24,7 +23,6 @@ define(function (require, exports, module) {
         o.logon = function () {
             if (!ws) {
 				var wsUrl = o.url();
-				if (o.port()) { wsUrl = wsUrl + ":" + o.port(); }
                 return new Promise(function (resolve, reject) {
                     ws = new WebSocket(wsUrl);
                     ws.onopen = function (event) {

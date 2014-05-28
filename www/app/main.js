@@ -4,16 +4,14 @@
  * @date 4/17/14 8:57:35 AM
  */
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, d3, require, $, brackets, window, prompt, confirm */
+/*global define, confirm */
 define(function (require, exports, module) {
     "use strict";
     
     var comm = require("app/PVSComm");
     var UI       = require("app/UserInterface"),
-        PVSSession = require("app/PVSSession"),
         WSClient = require("app/WebSocketClient"),
-        ConsoleLogger = require("app/util/ConsoleLogger"),
-        d3 = require("d3");
+        ConsoleLogger = require("app/util/ConsoleLogger");
     
     var wsc = WSClient.getInstance();
     
@@ -21,9 +19,9 @@ define(function (require, exports, module) {
         ConsoleLogger.log(obj);
     }
     
-    wsc.url("ws://localhost:8083")
+    wsc.url("ws://" + location.host)
         .logon()
-        .then(function (ws) {
+        .then(function () {
             UI.createUI();
             wsc.addListener("interactive", function (event) {
                 var ok = confirm(event.response.params[0]);
