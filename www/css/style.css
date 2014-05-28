@@ -114,7 +114,9 @@ div#tooltip.alert{
     border-bottom: 1px solid #ddd;
     border-radius: 0 4px 4px 0;
 }
-
+.sequent .CodeMirror {
+    display: inline-block;
+}
 .CodeMirror {
     border: 1px solid #eee;
     height: auto;
@@ -122,4 +124,10 @@ div#tooltip.alert{
 .CodeMirror-scroll {
     overflow-y: hidden;
     overflow-x: auto;
+}
+
+.sequent-label {
+    display: inline-block;
+    margin-top: -10px;
+    height: 24px;
 }

@@ -13,13 +13,9 @@ path {
      stroke-dasharray: 10,5;
  }
 
-path:hover {
+path.bolder {
     stroke-width: 6px;
 }
-
- circle:hover {
-     stroke-width: 3px;
- }
 
 .node circle.command {
     fill: #944;

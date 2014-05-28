@@ -25,10 +25,39 @@
             <div id="content-wrapper">
                 <div class="row">
                     <div class="col-md-7">
-                        <div id="toolbox" class="input-group">
-                            <input type="text" id="txtCommand" class="form-control" placeholder="Enter PVS command here"/>
-                            <span id="send" class="input-group-addon">Send</span>
+                        <div id="toolbox" >
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div id="setup-group" class="input-group">
+                                        <input type="text" id="txt-context" class="form-control" placeholder="set source folder"/>
+                                        <span id="change-context" class="input-group-addon">Change Context</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <div class="input-group-btn">
+                                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                                Theory File <span class="caret"></span>
+                                            </button>
+                                            <ul class="dropdown-menu" id="theory-files">
+
+                                            </ul>
+                                        </div>
+                                        <input type="text" id="txt-select-theory-file" class="form-control" placeholder="select theory file"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="input-group" id="command-group">
+                                        <input type="text" id="txtCommand" class="form-control" placeholder="Enter PVS command here"/>
+                                        <span id="send" class="input-group-addon">Send</span>
+                                    </div>
+                                </div>
+                            </div>
+                        
                         </div>
+                        
                         <div id="proofTree"></div>
                        
                     </div>

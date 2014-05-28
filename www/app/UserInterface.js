@@ -47,6 +47,16 @@ define(function (require, exports, module) {
         return {method: "proof-command", params: [command]};
     }
     
+    function bindToolBoxEvents() {
+        d3.select("#change-context").on("click", function () {
+            var context = d3.select("#txt-context").property("value");
+            session.changeContext(context)
+                .then(function () {
+                    
+                });
+        });
+    }
+    
     function bindEvents() {
         function processCommand(command) {
             if (command && command.trim().length) {
@@ -97,10 +107,10 @@ define(function (require, exports, module) {
         //add listener for window resize so that the height of the components on the interface are properly redistributed
         function windowResized() {
             var menubarHeight = $("#menubar").height(),
+                topToolBoxHeight = $("#toolbox").height(),
                 bodyHeight = $(window).height(),
                 bottomNavHeight = $("#bottom-nav").height();
-//                browserHeader = window.screen.height - window.screen.availHeight;
-            $("#proofTree").height(bodyHeight - menubarHeight - bottomNavHeight);
+            $("#proofTree").height(bodyHeight - menubarHeight - bottomNavHeight - topToolBoxHeight);
             $("#status").css("max-height", bodyHeight - menubarHeight - bottomNavHeight);
         }
         window.onresize = windowResized;
@@ -238,7 +248,7 @@ define(function (require, exports, module) {
             bindEvents();
         });
         
-
+        bindToolBoxEvents();
     }
     
     module.exports = {

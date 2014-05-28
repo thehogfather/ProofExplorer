@@ -309,6 +309,10 @@ define(function (require, exports, module) {
                 d.tooltip.remove();
                 delete d.tooltip;
             }
+        }).on("mouseover", function () {
+            d3.select(this).classed("bolder", true);
+        }).on("mouseout", function () {
+            d3.select(this).classed("bolder", false);
         });
 
         link.classed("active", function (d) {

@@ -203,6 +203,13 @@ define(function (require, exports, module) {
             });
     };
     
+    PVSSession.prototype.changeContext = function (context) {
+        return comm.changeContext(context);
+    };
+    
+    PVSSession.prototype.typeCheck = function (file) {
+        return comm.typeCheck(file);
+    };
     /**
         Sends a request to proove a formula in the given theory file. This function fires a 
         "treecreated" event to signal the creation of a prooftree data.
