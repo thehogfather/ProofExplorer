@@ -6,6 +6,10 @@ This project is a front end for interacting with [PVS](http://pvs.csl.sri.com/) 
 2. Collapse and expand proof tree branches
 3. Drag and drop proof commands between branches.
 
+
+###Requirements
+The communication with the PVS xmlrpc server requires [nodejs](http://nodejs.org/download/)
+
 ![Screenshot](screenshot.png?raw=true)
 This web project has the following setup:
 

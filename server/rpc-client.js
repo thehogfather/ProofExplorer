@@ -4,9 +4,9 @@
  * @date Mar 9, 2012
  * @project JSLib
  */
-/*jshint unused: false*/
+/*jshint unused: true*/
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, d3, require, $, brackets, window, MouseEvent */
+/*global  require, __dirname */
 
 (function () {
     "use strict";
@@ -18,7 +18,6 @@
         express = require("express"),
         bodyParser = require("body-parser"),
         logger = require("tracer").console(),
-        fs = require("fs"),
         FileUtil = require("./fileutil"),
         path = require("path"),
         ws = require("ws"),
@@ -107,9 +106,11 @@
     function clientWebSocketFunctions() {
         return {
             "changecontext": function (token, socket) {
+                var context = token.request.params[0];
+                token.request.params[0] = path.resolve(__dirname, context);
+                
                 makePVSRequest(token.request)
                     .then(function (res) {
-                        var context = token.request.params[0];
                         //fetch the files/folders in the directory
                         FileUtil.getFilesInDirectory(token.request.params[0])
                         .then(function (files) {
@@ -164,7 +165,7 @@
             }
         });
         
-        socket.on("close", function (e) {
+        socket.on("close", function () {
             logger.log("closing websocket client %d", clientid);
         });
     });
