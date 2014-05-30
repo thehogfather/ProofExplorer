@@ -8,15 +8,10 @@
 define(function (require, exports, module) {
     "use strict";
     var Backbone = require("backbone"),
-        template = require("text!app/templates/toolpalette.hbs"),
-        commandsMap = require("text!app/templates/commandHeirarchy.json");
-    
-    Handlebars.registerHelper("tool", function (obj) {
-        var label = obj.label || obj.command;
-        var icon = obj.icon || "";
-        var res = "<div class='tool' title='{2}'><i class='fa {0} fa-fw'></i><span class='tool-label'>{1}</span></div>".format(icon, label, obj.command);
-        return new Handlebars.SafeString(res);
-    });
+        template = require("text!app/templates/allproofcommands.hbs"),
+        commandsMap = require("text!app/templates/commandHeirarchy.json"),
+        favoriteCommands = require("app/FavoriteCommands").getInstance(),
+        proofCommands = require("app/util/ProofCommands");
 
     function parseCommands(str) {
         var commands = JSON.parse(str);
@@ -26,8 +21,7 @@ define(function (require, exports, module) {
         return json;
     }
     
-    var ToolPaletteView = Backbone.View.extend({
-        el: "#tool-palette",
+    var AllCommandsView = Backbone.View.extend({
         initialize: function (model) {
             this.model = model;
             this.render(model);
@@ -35,11 +29,27 @@ define(function (require, exports, module) {
         render: function (model) {
             var t = Handlebars.compile(template);
             var html = t(model);
+            this.$el.addClass("dialog");
             this.$el.html(html);
+            $("body").append(this.$el);
             return this;
         },
         events: {
-            "click .tool": "commandClicked"
+            "click .tool": "commandClicked",
+            "change input[type='checkbox']": "favoritesChanged",
+            "click #close": "close"
+        },
+        close: function () {
+            this.remove();
+        },
+        favoritesChanged: function (event) {
+            var p = event.target.parentElement.parentElement;
+            var command = proofCommands.getCommand($(".tool-label", p).text());
+            if (event.target.checked) {
+                favoriteCommands.addCommand(command);
+            } else {
+                favoriteCommands.removeCommand(command);
+            }
         },
         commandClicked: function (event) {
             var t = event.currentTarget;
@@ -50,9 +60,9 @@ define(function (require, exports, module) {
     });
     
     module.exports = {
-        create: function (model) {
-            model = model || parseCommands(commandsMap);
-            return new ToolPaletteView(model);
+        create: function () {
+            var model = parseCommands(commandsMap);
+            return new AllCommandsView(model);
         }
     };
 });

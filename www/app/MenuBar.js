@@ -8,23 +8,19 @@
 define(function (require, exports, module) {
     "use strict";
 
-    var commandsMap = require("text!app/templates/commandHeirarchy.json"),
-        template = require("text!app/templates/commandMenus.hbs"),
+    var commandsMap = require("text!app/templates/menu.json"),
+        template = require("text!app/templates/menubar.hbs"),
         Backbone = require("backbone");
     
     function parseCommands(str) {
         var commands = JSON.parse(str);
         var json = Object.keys(commands).map(function (name) {
-            var children = commands[name];
-            children.forEach(function (d) {
-               d.icon = d.icon || "unchecked"; 
-            });
             return {label: name, children: commands[name]};
         });
         return json;
     }
     
-    var CommandsMenuView = Backbone.View.extend({
+    var MenuBar = Backbone.View.extend({
         el: "#menubar",
         initialize: function (model) {
             this.render(model);
@@ -41,7 +37,7 @@ define(function (require, exports, module) {
         commandClicked: function (event) {
             var t = event.currentTarget;
             if (t.nodeName.toLowerCase() === "li") {
-                this.trigger("commandclicked", t.innerText, t.title);
+                this.trigger("menuclicked", t.innerText, t.title);
             }
         }
     });
@@ -49,7 +45,7 @@ define(function (require, exports, module) {
     module.exports = {
         create: function () {
             var model = parseCommands(commandsMap);
-            return new CommandsMenuView(model);
+            return new MenuBar(model);
         }
     };
 });

@@ -1,43 +1,33 @@
 {
-    "navigation": [
-        {"command":"(postpone)", "icon": "step_forward", "label": "postpone"},
-        {"command": "(quit)", "icon": "exit", "label": "quit"},
-        {"command": "(undo)", "icon": "undo", "label": "undo"}
-    ],
-    "structural rules": [
-        {"command": "(hide fnums)", "label": "hide"},
-        {"command": "(hide-all-but fnums)", "label": "hide-all-but"},
-        {"command": "(reveal fnums)", "label": "reveal"}
-    ],
     "annotation": [
-        {"command": "(label \"string\" fnums)", "icon": "tag", "label": "label"},
+        {"command": "(label \"string\" fnums)", "icon": "fa-tag", "label": "label"},
         {"command": "(unlabel fnum)", "label": "unlabel"},
-        {"command": "(comment \"string\")", "label": "comment", "icon": "comments"}
+        {"command": "(comment \"string\")", "label": "comment", "icon": "fa-comments"}
     ],
     "propositional": [
-        {"command": "(split)", "icon": "git_branch", "label": "split"},
-        {"command": "(case \"expr\")", "icon": "share_alt", "label": "case"},
-        {"command": "(lift-if)", "icon": "heat", "label": "lift-if"}
+        {"command": "(split)", "icon": "fa-yahoo", "label": "split"},
+        {"command": "(case \"expr\")", "icon": "fa-share-alt", "label": "case"},
+        {"command": "(lift-if)", "icon": "fa-heat", "label": "lift-if"}
     ],
     "quantifier": [
-        {"command": "(skosimp*)", "icon": "circle_exclamation_mark", "label": "skosimp*"},
+        {"command": "(skosimp*)", "icon": "fa-exclamation-circle", "label": "skosimp*"},
         {"command": "(skeep)", "label": "skeep"},
-        {"command": "(inst? fnum :subst(\"old_expr\" \"new_expr\"))", "icon": "circle_question_mark", "label": "inst?"}
+        {"command": "(inst? fnum :subst(\"old_expr\" \"new_expr\"))", "icon": "fa-question-circle", "label": "inst?"}
     ],
-    "equality and extensionality": [
-        {"command": "(beta)", "icon": "bold", "label": "beta"},
+    "equality": [
+        {"command": "(beta)", "icon": "fa-bold", "label": "beta"},
         {"command": "(apply-extensionality)", "icon": "sampler", "label": "apply-extensionality"},
-        {"command": "(name-replace \"string\" \"expr\")", "icon": "edit", "label": "name-replace"},
-        {"command": "(replace* fnums)", "icon": "retweet_2", "label": "replace*"}
+        {"command": "(name-replace \"string\" \"expr\")", "icon": "fa-edit", "label": "name-replace"},
+        {"command": "(replace* fnums)", "icon": "fa-retweet", "label": "replace*"}
     ],
-    "definitions, lemmas and type constraints": [
-        {"command": "(expand \"expr\")", "icon": "resize_full", "label": "expand"},
+    "definitions": [
+        {"command": "(expand \"expr\")", "icon": "fa-expand", "label": "expand"},
         {"command": "(lemma \"lemma_name\")", "icon": "book_open", "label": "lemma"},
         {"command": "(typepred \"expr\")", "icon": "text_bigger", "label": "typepred"},
         {"command": "(all-typepreds)", "label": "all-typepreds"}
     ],
     "simplification": [
-        {"command": "(assert)", "icon": "electricity", "label": "assert"},
-        {"command": "(grind)", "icon": "bomb", "label": "grind"}
+        {"command": "(assert)", "icon": "fa-bold", "label": "assert"},
+        {"command": "(grind)", "icon": "fa-bomb", "label": "grind"}
     ]
 }

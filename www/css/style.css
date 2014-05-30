@@ -11,7 +11,7 @@ body {
 
 .alert-tooltip .sequent {
     max-height: 250px;
-    max-width: 250px;
+    max-width: 350px;
     overflow-y: auto;
 }
 
@@ -34,6 +34,7 @@ div#tooltip.alert{
 
 #toolbox {
     margin-bottom: 20px;
+    display: none;
 }
 
 .content {
@@ -53,9 +54,6 @@ div#tooltip.alert{
     cursor: default;
     padding: 3px;
     margin-bottom: 3px;
-    border: 1px solid #aaa;
-    border-radius: 5px;
-    display: inline-block;
 }
 
 #toolbox-palette .tool:hover {
@@ -99,8 +97,6 @@ div#tooltip.alert{
     padding: 0 15px;
 }
 
-
-
 #console-list .list-group-item {
     padding: 2px 2px;
 }
@@ -135,4 +131,23 @@ div#tooltip.alert{
 #setup-group {
     margin-top: 10px;
     margin-bottom: 10px;
+    background-color: white;
+    width: 500px;
+}
+
+div.dialog {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+}
+
+#setup-group #toolbox-palette .tool {
+    width: 200px;
+}
+
+#tool-palette .tool {
+    display: inline-block;
 }

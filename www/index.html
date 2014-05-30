@@ -8,7 +8,7 @@
         <script src="lib/jquery.js"></script>
         <script src="lib/bootstrap.js"></script>
         <link type="text/css" rel="stylesheet" href="css/bootstrap.css"/>
-        <link type="text/css" rel="stylesheet" href="css/font-awesome.min.css"/>
+        <link type="text/css" rel="stylesheet" href="css/fa/font-awesome.min.css"/>
         <link type="text/css" rel="stylesheet" href="lib/cm/lib/codemirror.css"/>
         <link type="text/css" rel="stylesheet" href="lib/cm/addon/fold/foldgutter.css"/>
         <link type="text/css" rel="stylesheet" href="css/style.css"/>
@@ -17,75 +17,41 @@
     </head>
     <body>
         <div class="col-md-12 menu-wrap">
-           <div id="menubar" class="center-block"></div>
+           <div id="menubar"></div>
+            <div id="tool-palette" class="tab-pane active"></div>
         </div>
         <div class="container-fluid center-block">
             <div id="content-wrapper">
                 <div class="row">
-                    <div class="col-md-7">
+                    <div class="col-md-12">
                         <div id="toolbox" >
-                            <div class="row" id="setup-group">
-                                <div class="col-md-4">
-                                    <div class="input-group input-group-sm">
-                                        <span id="change-context" class="input-group-addon">Context</span>
-                                        <input type="text" id="txt-context" class="form-control" placeholder="set source folder" value="../examples"/>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="input-group">
-                                        <span id="typecheck" class="input-group-addon">Theory</span>
-                                        <div class="input-group-btn input-group-sm" id="theory-files">
-                                            <button type="button" class="btn btn-default dropdown-toggle form-control" data-toggle="dropdown">
-                                                <span class="filename"> Select File </span> <span class="caret"></span>
-                                            </button>
-                                            <ul class="dropdown-menu" >
-
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="input-group input-group-sm">
-                                        <span  class="input-group-addon">Formula</span>
-                                        <input type="text" id="txt-formula" class="form-control input-sm" placeholder=""/>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <button id="prove-formula"` type="button" class="btn btn-primary btn-block btn-sm">Prove Formula</button>    
+                            <div class="col-md-12">
+                                <div class="input-group input-group-sm" id="command-group">
+                                    <input type="text" id="txtCommand" class="form-control" placeholder="Enter PVS command here"/>
+                                    <span id="send" class="input-group-addon">Send</span>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="input-group input-group-sm" id="command-group">
-                                        <input type="text" id="txtCommand" class="form-control" placeholder="Enter PVS command here"/>
-                                        <span id="send" class="input-group-addon">Send</span>
-                                    </div>
-                                </div>
-                            </div>
-                        
                         </div>
                         
                         <div id="proofTree"></div>
                        
                     </div>
-                    <div  class="col-md-5" id="info-div">
+                   
+                </div>  
+                <div class="row">
+                    <div  class="col-md-12" id="info-div">
                         <div id="status" class="row"></div>
-                        
-                    </div>
-                </div>            
+                    </div>    
+                </div>
             </div>
  
         </div>
         
         <nav id="bottom-nav" class="navbar navbar-default navbar-fixed-bottom" role="region">
             <ul class="nav nav-tabs">
-                <li class="active"><a href="#tool-palette" data-toggle="tab">Commands</a></li>
-                <li><a href="#console" data-toggle="tab">Console</a></li>
+                <li id="console-tab" class="active"><a href="#console" data-toggle="tab">Console</a></li>
             </ul>
             <div id="bottom-panel" class="tab-content">
-                <div id="tool-palette" class="tab-pane active">
-
-                </div>
                 <div id="console" class="tab-pane">
                     <ul id="console-list" class="list-group">
 

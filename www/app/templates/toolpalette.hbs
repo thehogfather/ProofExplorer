@@ -1,10 +1,8 @@
 <div  id="toolbox-palette">
 <!--    <h5>Commands</h5>-->
     {{#each this}}
-        <div title="{{label}}" class="tool-group" id="{{id}}">
-                {{#each children}}
-                    {{tool this}}
-                {{/each}}
-        </div>
+
+        {{tool this}}
+
     {{/each}}
 </div>

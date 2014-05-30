@@ -5,7 +5,7 @@
  */
 /*jshint undef: true, unused: true */
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define,Promise */
+/*global define,Promise,$ */
 
 define(function (require, exports, module) {
     "use strict";
@@ -15,18 +15,17 @@ define(function (require, exports, module) {
         proofCommands = require("app/util/ProofCommands"),
         Tooltip = require("app/util/Tooltip");
     
-    var iconsUrlBase = "css/glyphicons/png/glyphicons_",
-        iconWidth = "20px",
+    var iconWidth = "20px",
         iconHeight = "20px";
     
     var el, svg, rad = 10, targetNode, draggedNode, drag;
-    var w, h, levelHeight = 70, margin = {top: 50, left: 50, right: 50, bottom: 50};
+    var w = $("#proofTree").width(), h = $("#proofTree").height(), margin = {top: 50, left: 50, right: 50, bottom: 50};
     var diagonal = d3.svg.diagonal(), zoom = d3.behavior.zoom(), board;
     var pointerDrag = d3.behavior.drag(), startPointerPos, pointerDragging, initialPointerTransform;
     var vis, commandRunner, treeData, tree, nodePointerG;
     
-    function iconUrl(iconName) {
-        return iconsUrlBase.concat("{0}.png").format(iconName);
+    function iconClass(iconName) {
+        return "fa {0} fa-fw".format(iconName);
     }
     
     function triangle(size) {
@@ -38,7 +37,6 @@ define(function (require, exports, module) {
             return d === node;
         });
     }
-
 
     function commandLabel(command) {
         var args = command.replace(/[()]/g, "").split(" ");
@@ -64,8 +62,8 @@ define(function (require, exports, module) {
             .attr("y", rad)
             .attr("width", iconWidth)
             .attr("height", iconHeight)
-            .append("xhtml:img").attr("src", function (d) {
-                return iconUrl(proofCommands.getIcon(commandLabel(d.command)));
+            .append("xhtml:i").attr("class", function (d) {
+                return iconClass(proofCommands.getIcon(commandLabel(d.command)));
             });
         return el;
     }
@@ -140,6 +138,16 @@ define(function (require, exports, module) {
         });
     };
     
+    function centerNode(node) {
+        var t = $("#proofTree");
+        var size = [t.width(), t.height()];
+        var scale = zoom.scale();
+        var x =  -node.x * scale + size[0] / 2,
+            y = -node.y * scale + size[1] / 2;
+        svg.transition().duration(300).attr("transform", "translate(" + x + " " + y + ") scale(" + scale + ")");
+        zoom.scale(scale).translate([x, y]);
+    }
+    
     function createActiveNodePointer() {
         var nodePointerG = svg.append("g").attr("class", "node-pointer");
         nodePointerG.append("path").attr("d", triangle(rad * 1.5));
@@ -191,10 +199,7 @@ define(function (require, exports, module) {
     */
     function updateTree(parent) {
         var duration = 500;
-        var maxDepth = treeData.depth();
-        h = Math.max(500, levelHeight * maxDepth);
-        el.select("svg").attr("width", w + margin.left + margin.right).attr("height", h + margin.top + margin.bottom);
-        tree.size([w, h]);
+        tree.size([$("#proofTree").width(), treeData.depth() * 50]);
         var nodes = tree.nodes(treeData.getData()),
             links = tree.links(nodes);
 
@@ -232,7 +237,7 @@ define(function (require, exports, module) {
             .on("click", onClick)
             .call(drag);
         //add collapse expand toggle to the top right
-        enteredNodes.append("g").attr("class", "collapser")
+        enteredNodes.append("g").attr("class", "collapser").style("display", "none")
             .on("mouseover", function () { d3.select(this).select("img").style("display", null);})
             .on("mouseout", function () { d3.select(this).select("img").style("display", "none");})
             .append("foreignObject").attr("x", -rad * 2).attr("y", -rad * 3).attr("width", iconWidth).attr("height", iconHeight)
@@ -241,11 +246,10 @@ define(function (require, exports, module) {
         //append labels to nodes
         var labelXFunc = function (d) {return d.command ? rad * 2.2 : rad * 1.5; },
             labelString = function (d) {
-                return d.name && d.name.indexOf(".") > -1 ? d.name.substr(d.name.indexOf(".") + 1) : d.name;
+                return  d.command || "";
             };
         enteredNodes.append("text")
-            .attr("x", labelXFunc).attr("y", 0)
-            .text(labelString);
+            .attr("x", labelXFunc).attr("y", 0);
 
         var exitedNodes = node.exit();
         exitedNodes.transition().duration(duration)
@@ -262,12 +266,13 @@ define(function (require, exports, module) {
             .classed("collapsed", function (d) {return d._children; });
 
         //update label pos
-        updatedNodes.select("text").attr("x", labelXFunc);
+        updatedNodes.select("text").attr("x", labelXFunc)
+            .text(labelString);
         //update the collapse expand icons
-        updatedNodes.selectAll(".collapser img")
-            .attr("src", function (d) {
-                var iconName = (d._children ? "circle_plus" : d.children ? "circle_minus" : "");
-                return iconName.length ? iconUrl(iconName) : iconName;
+        updatedNodes.selectAll(".collapser i")
+            .attr("class", function (d) {
+                var iconName = (d._children ? "fa-plus-circle" : d.children ? "fa-minus-circle" : "");
+                return iconName.length ? iconClass(iconName) : iconName;
             });
         //remove command nodes if any and update the node pointer position
         updatedNodes.each(function (d) {
@@ -301,18 +306,6 @@ define(function (require, exports, module) {
 
         enteredLinks.style("stroke", function (d) {
             return proofCommands.getColor(d.source.command);
-        }).on("click", function (d) {
-            var mouse = d3.mouse(d3.select("body").node());
-            if (!d.tooltip) {
-                d.tooltip = new Tooltip().render(d, {x: mouse[0], y: mouse[1]});
-            } else {
-                d.tooltip.remove();
-                delete d.tooltip;
-            }
-        }).on("mouseover", function () {
-            d3.select(this).classed("bolder", true);
-        }).on("mouseout", function () {
-            d3.select(this).classed("bolder", false);
         });
 
         link.classed("active", function (d) {
@@ -367,9 +360,7 @@ define(function (require, exports, module) {
         vis = eventDispatcher(this);
         treeData = _treeData;
         el = d3.select("#proofTree");
-        w = 900;
-        h = treeData.depth() * levelHeight;
-        tree = d3.layout.tree().size([w, h]);
+        tree = d3.layout.tree().size([$("#proofTree").width(), $("#proofTree").height()]);
         board = el.append("svg")
             .attr("width", w + margin.left + margin.top)
             .attr("height", h + margin.bottom + margin.top)
@@ -434,14 +425,21 @@ define(function (require, exports, module) {
     
     TreeVis.prototype.addCommand = addCommand;
     
+    TreeVis.prototype.centerNode = function (node) {
+        centerNode(node);
+        return this;
+    };
+    
     TreeVis.prototype.registerCommandRunner = function (d) {
         commandRunner = d;
     };
     
     TreeVis.prototype.initialise = function (session) {
+//        var tv = this;
         session.addListener("statechanged", function (event) {
             var data = event.tree.find(null, function (node) { return node.id === event.state.label; }) || event.tree.getData();
             updateTree(data);
+            //tv.centerNode(session.getActiveState());
         }).addListener("stateunchanged", function (event) {
             console.log(event);
             //remove the command to show that it has no effect

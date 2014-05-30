@@ -13,7 +13,10 @@ define(function (require, exports, module) {
         proofCommands = require("app/util/ProofCommands"),
         PVSSession = require("app/PVSSession"),
         StatusLogger = require("app/util/StatusLogger"),
-        CommandsMenu = require("app/CommandsMenu"),
+        SetupView = require("app/util/SetupView"),
+        MenuBar  = require("app/MenuBar"),
+        AllCommandsView = require("app/AllCommandsView"),
+        favoriteCommands = require("app/FavoriteCommands").getInstance(),
         ToolPalette  = require("app/ToolPalette"),
         fileListTemplate = require("text!app/templates/filelist.hbs");
     
@@ -22,6 +25,13 @@ define(function (require, exports, module) {
         targetNodeEvent,
         session = new PVSSession(),
         treeVis, viewportControls;
+    var setup = new SetupView();
+
+    function commandClicked(label, command) {
+        var txt = d3.select("#txtCommand");
+        txt.property("value", command);
+        txt.node().focus();
+    }
     
     function onTreeNodeMouseOver(event) {
         if (draggedCommand) {
@@ -58,24 +68,26 @@ define(function (require, exports, module) {
         });
     }
     
+    function reloadToolbox(event) {
+        ToolPalette.create(event.commands)
+            .on("commandclicked", commandClicked);
+    }
+    
     function bindToolBoxEvents() {
+        favoriteCommands.addListener("commandadded", reloadToolbox)
+        .addListener("commandremoved", reloadToolbox);
         d3.select("#txt-context").on("blur", function () {
             var context = d3.select(this).property("value");
+            var spinner = d3.select(this.parentNode).append("i").attr("class", "fa fa-spinner fa-spin");
             session.changeContext(context)
                 .then(function (res) {
                     console.log(res);
+                    spinner.remove();
                     populateTheoryFileList(res.files);
+                }, function (err) {
+                    console.log(err);
+                    spinner.attr("class", "fa fa-warning");
                 });
-        });
-        
-        d3.select("#typecheck").on("click", function () {
-            var file = d3.select("#theory-files button span.filename").text().split(".")[0];
-            if (file) {
-                session.typeCheck(file)
-                    .then(function (res) {
-                        console.log(res);
-                    });
-            }
         });
         
         d3.select("#prove-formula").on("click", function () {
@@ -88,6 +100,8 @@ define(function (require, exports, module) {
                         return session.proveFormula(formula, theory);
                     }).then(function (res) {
                         StatusLogger.log(res);
+                        setup.hide();
+                        d3.select("#toolbox").style("display", "block");
                     });
             }
         });
@@ -130,6 +144,15 @@ define(function (require, exports, module) {
             });
         
         //add event for free text
+        
+        d3.select("#console-tab").on("click", function () {
+            var cbody = d3.select("#console-list");
+            if (cbody.style("display")) {
+                cbody.style("display", null);
+            } else {
+                cbody.style("display", "none");
+            }
+        });
         d3.select("#send").on("click", function () {
             var command = d3.select("#txtCommand").property("value");
             _sendCommand(command);
@@ -146,20 +169,20 @@ define(function (require, exports, module) {
                 topToolBoxHeight = $("#toolbox").height(),
                 bodyHeight = $(window).height(),
                 bottomNavHeight = $("#bottom-nav").height();
-            $("#proofTree").height(bodyHeight - menubarHeight - bottomNavHeight - topToolBoxHeight);
-            $("#status").css("max-height", bodyHeight - menubarHeight - bottomNavHeight);
+            var usableHeight = (bodyHeight - menubarHeight - bottomNavHeight - topToolBoxHeight);
+            $("#proofTree").height( usableHeight / 2);
+            $("#status").css("max-height", usableHeight / 2);
         }
         window.onresize = windowResized;
         windowResized();
     }
     
     function createUI() {
+        setup.render();
         var pad = 20,
             iconRad = 15,
             viewportControlHeight = 40,
             viewportControlWidth = 90;
-//        var context = "../examples",
-//            file = "predictability_th";
         
         function createControls() {
             //map the string data to create objects whose command attributes is the string
@@ -251,29 +274,23 @@ define(function (require, exports, module) {
             tb.selectAll("circle").call(drag);
         }
         
-        function commandClicked(label, command) {
-            var txt = d3.select("#txtCommand");
-            txt.property("value", command);
-            txt.node().focus();
-        }
-         //begin the session
-//        session.begin(context, file)
-//            .then(function (res) {
-//                StatusLogger.log(res);
-//                return session.proveFormula("dn_button_predictable", "predictability_th");
-//            }).then(function (res) {
-//                StatusLogger.log(res);
-//            });
-//        
         session.addListener("treecreated", function (event) {
             treeVis = new TreeVis(event.tree);
-            ToolPalette.create()
-                .on("commandclicked", commandClicked);
+            
             treeVis.initialise(session);
             
             createControls();
-            CommandsMenu.create(session)
-                .on("commandclicked", commandClicked);
+            MenuBar.create()
+                .on("menuclicked", function (label) {
+                    label = label.trim().toLowerCase();
+                    if (label ===  "open") {
+                        setup.show();
+                    } else if (label === "quit") {
+                        
+                    } else if (label === "set toolbar commands") {
+                        AllCommandsView.create();
+                    }
+                });
             
             treeVis.registerCommandRunner(function (node, command) {
                 return session.postponeUntil(node.id)

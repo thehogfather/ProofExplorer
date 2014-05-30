@@ -54,15 +54,15 @@ define(function (require, exports, module) {
     function isParent(parent, child) {
         return parent !== child && child.indexOf(parent) === 0;
     }
-    
-    function levelUp(s) {
-        return s.substring(0, s.lastIndexOf("."));
-    }
-    
-    function areSiblings(child1, child2) {
-        return levelUp(child1) === levelUp(child2);
-    }
-    
+//    
+//    function levelUp(s) {
+//        return s.substring(0, s.lastIndexOf("."));
+//    }
+//    
+//    function areSiblings(child1, child2) {
+//        return levelUp(child1) === levelUp(child2);
+//    }
+//    
     /**
         This function inspects the oldstate and new state name and adds new children
         to the tree if needed. E.g., if old state was test and we are in a new state test.1
