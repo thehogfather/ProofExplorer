@@ -7,14 +7,15 @@
 /*global define */
 define(function (require, exports, module) {
     "use strict";
-    var eventDispatcher = require("app/util/eventDispatcher");
+    var eventDispatcher = require("app/util/eventDispatcher"),
+        proofCommands = require("app/util/ProofCommands");
     
     var instance,
         commands;
     
     function FavoriteCommands() {
         eventDispatcher(this);
-        commands = {};
+        commands = {"grind": proofCommands.getCommand("grind")};
     }
     
     function toList(obj) {
