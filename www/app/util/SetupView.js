@@ -9,14 +9,15 @@ define(function (require, exports, module) {
     "use strict";
     
     var Backbone = require("backbone"),
-        template  = require("text!app/templates/setup.hbs");
+        template  = require("text!app/templates/setup.hbs"),
+        strings = require("i18n!nls/strings");
         
     var SetupView = Backbone.View.extend({
         initialize: function () {
         },
         render: function () {
             var t = Handlebars.compile(template);
-            var html = t();
+            var html = t(strings);
             //adjust x and y based on cursor position relative to the screen
             this.$el.html(html);
             this.$el.addClass("dialog");

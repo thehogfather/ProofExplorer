@@ -98,13 +98,13 @@ define(function (require, exports, module) {
                 .style("opacity", 0.5);
         }
         //show the minimise icon
-        d3.select(this.parentNode).select(".collapser img").style("display", null);
+        d3.select(this.parentNode).select(".collapser").style("display", null);
         vis.fire({type: "mouseover.node", nodeData: d, nodeEl: d3.select(this)});
     };
 
     var onMouseOut = function (d) {
         d3.select(this).style("fill", "none");
-        d3.select(this.parentNode).select(".collapser img").style("display", "none");
+        d3.select(this.parentNode).select(".collapser").style("display", "none");
         vis.fire({type: "mouseout.node", nodeData: d, nodeEl: d3.select(this)});
         targetNode = null;
     };
@@ -234,14 +234,14 @@ define(function (require, exports, module) {
             .on("mouseover", onMouseOver)
             .on("mouseout", onMouseOut)
             .on("mousedown", onMouseDown)
-            .on("click", onClick)
-            .call(drag);
+            .on("click", onClick).call(drag);
+        
         //add collapse expand toggle to the top right
         enteredNodes.append("g").attr("class", "collapser").style("display", "none")
-            .on("mouseover", function () { d3.select(this).select("img").style("display", null);})
-            .on("mouseout", function () { d3.select(this).select("img").style("display", "none");})
+            .on("mouseover", function () { d3.select(this).style("display", null);})
+            .on("mouseout", function () { d3.select(this).style("display", "none");})
             .append("foreignObject").attr("x", -rad * 2).attr("y", -rad * 3).attr("width", iconWidth).attr("height", iconHeight)
-            .append("xhtml:img").on("click", toggleCollapse);
+            .append("xhtml:i").on("click", toggleCollapse);
 
         //append labels to nodes
         var labelXFunc = function (d) {return d.command ? rad * 2.2 : rad * 1.5; },
@@ -382,38 +382,44 @@ define(function (require, exports, module) {
             drag = d3.behavior.drag().origin(function (d) {return d; });
             var ghostNode, pos;
             drag.on("dragstart", function (d) {
-                pos = [d3.event.sourceEvent.x, d3.event.sourceEvent.y];
-                draggedNode = d;
-                ghostNode = svg.insert("circle", "g")
-                    .attr("cx", pos[0])
-                    .attr("cy", pos[1])
-                    .attr("r", rad * 2).style("display", "none")
-                    .attr("class", "ghost");
-                d3.select(this).attr("pointer-events", "click");
-                vis.fire({type: "dragstart.node", nodeData: d, nodeEl: d3.select(this), pos: pos});
-            }).on("drag", function (d) {
-                //updated position of node
-                pos = d3.mouse(svg.node());
-                ghostNode.attr("cx", pos[0]).attr("cy", pos[1]).style("display", null);
-                vis.fire({type: "drag.node", nodeData: d, nodeEl: d3.select(this), pos: pos});
-            }).on("dragend", function (d) {
-                var tx = draggedNode.x, ty = draggedNode.y;
-                if (targetNode) {
-                    copyCommand(TreeData.copyTree(d), targetNode, commandRunner)
-                    .then(function (res) {
-                        console.log(res);
-                    });
-                    //update the tree
-                    updateTree(targetNode);
-                    tx = targetNode.x;
-                    ty = targetNode.y;
+                if (d.command) {
+                    pos = [d3.event.sourceEvent.x, d3.event.sourceEvent.y];
+                    draggedNode = d;
+                    ghostNode = svg.insert("circle", "g")
+                        .attr("cx", pos[0])
+                        .attr("cy", pos[1])
+                        .attr("r", rad * 2).style("display", "none")
+                        .attr("class", "ghost");
+                    d3.select(this).attr("pointer-events", "click");
+                    vis.fire({type: "dragstart.node", nodeData: d, nodeEl: d3.select(this), pos: pos});
                 }
-                draggedNode = null;
-                
-                ghostNode.transition().duration(200).attr("cx", tx).attr("cy", ty).remove();
-                d3.select(this).attr("pointer-events", null);
-                
-                vis.fire({type: "dragend.node", node: d, nodeEl: d3.select(this), pos: d3.mouse(svg.node())});
+            }).on("drag", function (d) {
+                if (d.command) {
+                    //updated position of node
+                    pos = d3.mouse(svg.node());
+                    ghostNode.attr("cx", pos[0]).attr("cy", pos[1]).style("display", null);
+                    vis.fire({type: "drag.node", nodeData: d, nodeEl: d3.select(this), pos: pos});
+                }
+            }).on("dragend", function (d) {
+                if (d.command) {
+                    var tx = draggedNode.x, ty = draggedNode.y;
+                    if (targetNode) {
+                        copyCommand(TreeData.copyTree(d), targetNode, commandRunner)
+                        .then(function (res) {
+                            console.log(res);
+                        });
+                        //update the tree
+                        updateTree(targetNode);
+                        tx = targetNode.x;
+                        ty = targetNode.y;
+                    }
+                    draggedNode = null;
+
+                    ghostNode.transition().duration(200).attr("cx", tx).attr("cy", ty).remove();
+                    d3.select(this).attr("pointer-events", null);
+
+                    vis.fire({type: "dragend.node", node: d, nodeEl: d3.select(this), pos: d3.mouse(svg.node())});
+                }
             });
             
             d3.selectAll(".node circle.command").call(drag);

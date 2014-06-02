@@ -106,13 +106,12 @@
     function clientWebSocketFunctions() {
         return {
             "changecontext": function (token, socket) {
+                token.request.params[0] = path.resolve(__dirname, token.request.params[0]);
                 var context = token.request.params[0];
-                token.request.params[0] = path.resolve(__dirname, context);
-                
                 makePVSRequest(token.request)
                     .then(function (res) {
                         //fetch the files/folders in the directory
-                        FileUtil.getFilesInDirectory(token.request.params[0])
+                        FileUtil.getFilesInDirectory(context)
                         .then(function (files) {
                             //filter files to only contain pvs files and ensure paths returned are relative to context
                             var pvsFiles = files.filter(function (f) {

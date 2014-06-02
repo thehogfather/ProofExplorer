@@ -33,7 +33,7 @@ define(function (require, exports, module) {
             this.$el.html(html);
             $("body").append(this.$el);
             //check the values in the favorites list
-            var labels = Object.keys(favoriteCommands.getCommands()).map(function (label) { return label; });
+            var labels = favoriteCommands.getCommands().map(function (c) { return c.label; });
             $("div.tool").each(function () {
                 var l = $(".tool-label", this).text();
                 $("input[type='checkbox']", this).prop("checked", labels.indexOf(l.trim()) > -1);

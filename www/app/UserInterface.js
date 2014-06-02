@@ -10,7 +10,7 @@ define(function (require, exports, module) {
     "use strict";
     var d3 = require("d3"),
         TreeVis = require("app/TreeVis"),
-        proofCommands = require("app/util/ProofCommands"),
+//        proofCommands = require("app/util/ProofCommands"),
         PVSSession = require("app/PVSSession"),
         StatusLogger = require("app/util/StatusLogger"),
         SetupView = require("app/util/SetupView"),
@@ -18,19 +18,21 @@ define(function (require, exports, module) {
         AllCommandsView = require("app/AllCommandsView"),
         favoriteCommands = require("app/FavoriteCommands").getInstance(),
         ToolPalette  = require("app/ToolPalette"),
-        fileListTemplate = require("text!app/templates/filelist.hbs");
+        fileListTemplate = require("text!app/templates/filelist.hbs"),
+        strings = require("i18n!nls/strings"),
+        CodeMirror = require("cm/lib/codemirror"),
+        proofCommandHints = require("app/editor/ProofCommandHints");
     
-    var commands = proofCommands.getCommands(),
-        draggedCommand,
+    var draggedCommand,
         targetNodeEvent,
+        proofCommandEditor,
         session = new PVSSession(),
         treeVis, viewportControls;
     var setup = new SetupView();
 
     function commandClicked(label, command) {
-        var txt = d3.select("#txtCommand");
-        txt.property("value", command);
-        txt.node().focus();
+        proofCommandEditor.setValue(command);
+        proofCommandEditor.focus();
     }
     
     function onTreeNodeMouseOver(event) {
@@ -75,10 +77,10 @@ define(function (require, exports, module) {
     
     function bindToolBoxEvents() {
         favoriteCommands.addListener("commandadded", reloadToolbox)
-        .addListener("commandremoved", reloadToolbox);
+            .addListener("commandremoved", reloadToolbox);
         d3.select("#txt-context").on("blur", function () {
             var context = d3.select(this).property("value");
-            var spinner = d3.select(this.parentNode).append("i").attr("class", "fa fa-spinner fa-spin");
+            var spinner = d3.select("#change-context").append("i").attr("class", "fa fa-spinner fa-spin");
             session.changeContext(context)
                 .then(function (res) {
                     console.log(res);
@@ -101,33 +103,31 @@ define(function (require, exports, module) {
                     }).then(function (res) {
                         StatusLogger.log(res);
                         setup.hide();
-                        d3.select("#toolbox").style("display", "block");
                     });
             }
         });
     }
     
-    function bindEvents() {
-        function processCommand(command) {
-            if (command && command.trim().length) {
-                if (proofCommands.getCommands().indexOf(command) < 0) {
-                    proofCommands.getCommands().push(command);
-                }
-                if (command !== "(postpone)" || command !== "(undo)") {
-                    treeVis.addCommand(session.getActiveState(), command);
-                }
-                session.sendCommand(proofCommand(command))
-                    .then(function (res) {
-                        console.log(res);
-                        StatusLogger.log(res);
-                    });
+    function processCommand(command) {
+        if (command && command.trim().length) {
+            if (command !== "(postpone)" || command !== "(undo)") {
+                treeVis.addCommand(session.getActiveState(), command);
             }
+            session.sendCommand(proofCommand(command))
+                .then(function (res) {
+                    console.log(res);
+                    StatusLogger.log(res);
+                });
         }
+    }
+    
+    function bindEvents() {
+        
         
         function _sendCommand(command) {
             processCommand(command);
             //clear the textbox
-            d3.select("#txtCommand").property("value", "");
+            proofCommandEditor.setValue("");
         }
         
         treeVis.addListener("mouseover.node", onTreeNodeMouseOver)
@@ -144,19 +144,16 @@ define(function (require, exports, module) {
             });
         
         //add event for free text
-        
-        d3.select("#console-tab").on("click", function () {
-            var cbody = d3.select("#console-list");
-            if (cbody.style("display")) {
-                cbody.style("display", null);
-            } else {
-                cbody.style("display", "none");
-            }
-        });
         d3.select("#send").on("click", function () {
-            var command = d3.select("#txtCommand").property("value");
+            var command = proofCommandEditor.getValue();
             _sendCommand(command);
         });
+        //create codemirror instance for sending commands
+        proofCommandEditor = new CodeMirror(d3.select("#txtCommand").node(), {
+            mode: "lisp", lineNumbers: false
+        });
+        
+        CodeMirror.registerHelper("hint", "proofhint", proofCommandHints);
         d3.select("#txtCommand").on("keydown", function () {
             if (d3.event.which === 13) {
                 _sendCommand(d3.select("#txtCommand").property("value"));
@@ -178,63 +175,30 @@ define(function (require, exports, module) {
     }
     
     function createUI() {
+        reloadToolbox({});
         setup.render();
-        var pad = 20,
-            iconRad = 15,
-            viewportControlHeight = 40,
+        var viewportControlHeight = 40,
             viewportControlWidth = 90;
         
         function createControls() {
             //map the string data to create objects whose command attributes is the string
-            var data = commands.map(function (d) {
-                return {x: 0, y: 0, command: d};
-            });
 
-            var tb = d3.select("svg").insert("g", "g").attr("transform", "translate(0  " + viewportControlHeight + ")");
+            var tb = d3.select("svg").insert("g", "g").attr("transform", "translate("  + viewportControlWidth + ")");
             viewportControls = d3.select("svg").insert("g", "g").classed("viewport-control", true);
             viewportControls.append("foreignObject").attr("x", 0).attr("y", 0).attr("width", viewportControlWidth).attr("height", viewportControlHeight)
                 .append("xhtml:span").classed("scale", true);
             
-            var icong = tb.selectAll(".button").data(data).enter()
-                .append("g").attr("class", "button")
-                .attr("transform", function (d, i) {
-                    return "translate(" + pad + " " + (i * (iconRad * 2 + pad)) + ")";
+            var navGroup = tb.append("g").attr("class", "nav-buttons")
+                .append("foreignObject").attr("x" , 0).attr("y", 0).attr("height", 30).attr("width", 150)
+                    .append("xhtml:div");
+            navGroup.append("i").classed("fa-fw fa fa-reply", true).style("cursor", "pointer")
+                .on("click", function () {
+                    processCommand("(undo)");
                 });
-
-            var button = icong.append("circle");
-            button.attr("r", iconRad)
-                .attr("cx", iconRad)
-                .attr("cy", iconRad)
-                .style("fill", function (d) {
-                    return proofCommands.getColor(d.command);
-                }).style("stroke", function (d) {
-                    return d3.rgb(proofCommands.getColor(d.command)).darker();
-                }).on("click", function (d) {
-                    if (["(postpone)", "(undo)"].indexOf(d.command) > -1) {
-                        session.sendCommand(proofCommand(d.command))
-                            .then(function (res) {
-                                StatusLogger.log(res);
-                            });
-                    }
-                });
-            icong.append("text").attr("y", iconRad * 2)
-                .attr("x", iconRad)
-                .attr("text-anchor", "middle")
-                .text(function (d) { return d.command; });
             
-            var gBR = tb.node().getBoundingClientRect();
-            tb.insert("rect", "g.button").attr("y", -pad).attr("x", -pad)
-                .attr("rx", iconRad).attr("ry", iconRad)
-                .classed("recent-commands", true)
-                .attr("width", gBR.width + (2 * pad)).attr("height", gBR.height + (2 * pad));
-            
-            //register drag listener
-            var drag = d3.behavior.drag().origin(function (d) {
-                return d;
-            });
-            var ghostNode;
+//            var ghostNode;
 
-            drag.on("dragstart", function (d) {
+           /* drag.on("dragstart", function (d) {
                 ghostNode = tb.insert("circle", "g").attr("r", iconRad)
                     .attr("cx", d3.event.sourceEvent.x)
                     .attr("cy", d3.event.sourceEvent.y)
@@ -271,23 +235,21 @@ define(function (require, exports, module) {
                 draggedCommand = null;
                 
             });
-            tb.selectAll("circle").call(drag);
+            tb.selectAll("circle").call(drag);*/
         }
         
         session.addListener("treecreated", function (event) {
             treeVis = new TreeVis(event.tree);
-            
             treeVis.initialise(session);
-            
             createControls();
             MenuBar.create()
                 .on("menuclicked", function (label) {
-                    label = label.trim().toLowerCase();
-                    if (label ===  "open") {
-                        setup.show();
-                    } else if (label === "quit") {
-                        
-                    } else if (label === "set toolbar commands") {
+                    label = label.trim();
+                    if (label ===  strings.OPEN) {
+                        //setup.show();
+                    } else if (label ===  strings.QUIT) {
+                        processCommand("(quit)");
+                    } else if (label === strings.CONFIGURE_FAVORITE_COMMANDS) {
                         AllCommandsView.create();
                     }
                 });

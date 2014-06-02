@@ -8,39 +8,68 @@
 define(function (require, exports, module) {
     "use strict";
     var eventDispatcher = require("app/util/eventDispatcher"),
-        proofCommands = require("app/util/ProofCommands");
+        proofCommands = require("app/util/ProofCommands"),
+        Preferences = require("app/prefs/Preferences");
     
     var instance,
-        commands;
+        commands,
+        FAVORITE_COMMANDS = "favorite commands";
     
     function FavoriteCommands() {
         eventDispatcher(this);
-        commands = {"grind": proofCommands.getCommand("grind")};
+        var _prefCommands = Preferences.get(FAVORITE_COMMANDS) || ["grind", "expand", "inst?", "assert", "split", "lift-if", "skeep", "lemma" ]; 
+        commands = {};
+        _prefCommands.forEach(function (c) {
+            commands[c] = proofCommands.getCommand(c);
+        });
     }
-    
+    /**
+        Utility function to convert a map to an array
+        @param {object} map the map to convert
+        @returns {Array} the array of elements in the map
+    */
     function toList(obj) {
         return Object.keys(obj).map(function (k) {
             return obj[k];
         });
     }
     
+    function _save() {
+        Preferences.set(FAVORITE_COMMANDS, Object.keys(commands));
+    }
+    
+    /**
+     Adds a command to the favorites list if it is not already present
+     Fires the "commandadded" event
+     @param {object} cmd the command object to add
+    */
     FavoriteCommands.prototype.addCommand = function (cmd) {
         if (!commands[cmd.label]) {
             commands[cmd.label] = cmd;
+            _save();
             this.fire({type: "commandadded", command: cmd, commands: toList(commands)});
         }
         return this;
     };
-    
+    /**
+    *Removes a command from the favorites list if it exists
+    *Fires the "commandremoved" event
+    *@param {object} cmd the command object to remove
+    */
     FavoriteCommands.prototype.removeCommand = function (cmd) {
         if (commands[cmd.label]) {
             delete commands[cmd.label];
+            _save();
             this.fire({type: "commandremoved", command: cmd, commands: toList(commands)});
         }
+        return this;
     };
-    
+    /**
+     Gets a list of all the commands marked as favorite
+     @returns {array} the array of command objects
+    */
     FavoriteCommands.prototype.getCommands = function () {
-        return commands;
+        return toList(commands);
     };
     
     module.exports = {

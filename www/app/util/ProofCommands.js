@@ -7,10 +7,10 @@
 /*global define*/
 define(function (require, exports, module) {
     "use strict";
-    var d3 = require("d3");
+//    var d3 = require("d3");
     var commandsHeirarchy = require("text!app/templates/commandHeirarchy.json");
-    var colors = d3.scale.category20();
-    var commands = ["(postpone)", "(undo)"];
+//    var colors = d3.scale.category20();
+    var navCommands = [/*{label: "postpone", icon: "fa-step-forward", command: "(postpone)"},*/ {label: "undo", icon: "fa-reply", command:"(undo)"}];
 
     ///FIXME restructure these functions for efficiency
     var allCommands = (function (str) {
@@ -50,11 +50,11 @@ define(function (require, exports, module) {
         getCommand: function (label) {
             return commandsMap[label];
         },
-        getColor: function (command) {
-            return colors(commands.indexOf(command));
+        getColor: function (/*command*/) {
+            return "#bbb";// colors(commands.indexOf(command));
         },
-        getCommands: function () {
-            return commands;
+        getNavCommands: function () {
+            return navCommands;
         },
         getIcon: function (label) {
             return iconsMap[label];

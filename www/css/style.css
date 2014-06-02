@@ -1,6 +1,6 @@
 
 body {
-    overflow: hidden;
+
 }
 
 .alert-tooltip {
@@ -34,7 +34,6 @@ div#tooltip.alert{
 
 #toolbox {
     margin-bottom: 20px;
-    display: none;
 }
 
 .content {
@@ -101,11 +100,6 @@ div#tooltip.alert{
     padding: 2px 2px;
 }
 
-#menubar {
-    width: 1003px;
-    height: 50px;
-}
-
 .menu-wrap {
     border-bottom: 1px solid #ddd;
     border-radius: 0 4px 4px 0;
@@ -116,6 +110,7 @@ div#tooltip.alert{
 .CodeMirror {
     border: 1px solid #eee;
     height: auto;
+    line-height: 2;
 }
 .CodeMirror-scroll {
     overflow-y: hidden;
@@ -148,6 +143,10 @@ div.dialog {
     width: 200px;
 }
 
-#tool-palette .tool {
+#tool-palette .tool, svg .tool {
     display: inline-block;
+}
+
+svg #toolbox-palette {
+    background: rgb(243, 186, 186);
 }

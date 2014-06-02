@@ -8,8 +8,9 @@
 define(function (require, exports, module) {
     "use strict";
 
-    var commandsMap = require("text!app/templates/menu.json"),
+    var commandsMap = require("text!app/templates/menu.hbs"),
         template = require("text!app/templates/menubar.hbs"),
+        strings = require("i18n!nls/strings"),
         Backbone = require("backbone");
     
     function parseCommands(str) {
@@ -44,7 +45,9 @@ define(function (require, exports, module) {
     
     module.exports = {
         create: function () {
-            var model = parseCommands(commandsMap);
+            var menuTemplate = Handlebars.compile(commandsMap);
+            var menuStr = menuTemplate(strings);
+            var model = parseCommands(menuStr);
             return new MenuBar(model);
         }
     };

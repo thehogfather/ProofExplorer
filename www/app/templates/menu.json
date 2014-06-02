@@ -1,7 +1,0 @@
-{
-    "Theory": [
-        {"label":"Open", "icon": "fa-file-text-o", "command": "Open Existing Theory file"},
-        {"label": "Set Toolbar Commands", "icon": "fa-cog", "command": "Select favorite proof commands"},
-        {"label": "Quit", "icon": "fa-sign-out", "command": "quit"}
-    ]
-}
