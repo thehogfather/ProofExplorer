@@ -110,18 +110,19 @@ define(function (require, exports, module) {
     
     function processCommand(command) {
         if (command && command.trim().length) {
-//            var icon;
+            var icon, iconclass;
             if (command !== "(postpone)" || command !== "(undo)") {
                 treeVis.addCommand(session.getActiveState(), command)
                     .then(function (node) {//add spinner
-//                        icon = node.element.select(".icon .fa");
-//                        icon.classed("fa-spin", true).classed("fa-fw", false);
+                        icon = node.element.select(".icon .fa");
+                        iconclass = icon.attr("class");
+                        icon.attr("class", "fa fa-spinner fa-fw");
                     });
             }
             session.sendCommand(proofCommand(command))
                 .then(function (res) {
                     console.log(res);
-//                    if (icon) {icon.classed("fa-spin", false).classed("fa-fw", true); icon = null; }
+                    if (icon) {icon.attr("class", iconclass); icon = null; }
                     StatusLogger.log(res);
                 });
         }

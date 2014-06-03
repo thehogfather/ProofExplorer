@@ -6,7 +6,7 @@
  */
 /*jshint unused: true*/
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global  require, __dirname */
+/*global  require, __dirname, process */
 
 (function () {
     "use strict";
@@ -24,17 +24,19 @@
         clientid = 0,
         clientSocket;
     
+    var argv = require("minimist")(process.argv.slice(2));
+    
     var expressServer = express();//this is how the client sends messages to the PVS server
     expressServer.use(bodyParser());
     expressServer.use(express.static("../www"));
     
     var httpServer = http.createServer(expressServer);
     //declare hosts and ports
-    var pvsHost = "localhost",
-        pvsPort = 22334,
+    var pvsHost =  "localhost",
+        pvsPort = argv.pvsport || 22334,
         xmlRPCRequestPath = "/RPC2",
         callbackHost = "localhost",
-        callbackPort = 12346;
+        callbackPort = argv.callbackport || 12346;
     
    
     var WebSocketServer = ws.Server;

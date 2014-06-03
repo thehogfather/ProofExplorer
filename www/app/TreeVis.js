@@ -359,7 +359,7 @@ define(function (require, exports, module) {
     function TreeVis(_treeData) {
         vis = eventDispatcher(this);
         treeData = _treeData;
-        el = d3.select("#proofTree");
+        el = d3.select("#proofTree").html("");
         tree = d3.layout.tree().size([$("#proofTree").width(), $("#proofTree").height()]);
         board = el.append("svg")
             .attr("width", w + margin.left + margin.top)

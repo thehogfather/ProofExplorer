@@ -71,7 +71,7 @@ div#tooltip.alert{
     padding-right: 20px;
     padding-bottom: 10px;
 }
-#status {
+#current-sequent {
     padding-left: 10px;
     overflow-y: auto;
 }

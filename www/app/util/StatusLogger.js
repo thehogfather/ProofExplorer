@@ -9,7 +9,7 @@
 define(function (require, exports, module) {
     "use strict";
     
-    var el = "#status";
+    var el = "#current-sequent";
     var Backbone = require("backbone"),
         template  = require("text!app/templates/status.hbs"),
         CodeMirror = require("cm/lib/codemirror");

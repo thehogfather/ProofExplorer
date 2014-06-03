@@ -20,7 +20,11 @@
             });
         });
     }
-    
+    /**
+        Reads the files/folders in the current directory and returns their path and whether or not they are files or folders
+        @param {string} fullPath the path to read
+        @returns {Promise} a promise that resolves with an array of files present in the current directory
+    */
     function readDirectory(fullPath) {
         return stat(fullPath).then(function (f) {
             if (f.isDirectory()) {
@@ -30,9 +34,17 @@
                             reject(err);
                         } else {
                             var filePaths = files.map(function (file) {
-                                return path.join(fullPath, file);
+                                var fpath = path.join(fullPath, file);
+                                return stat(fpath);
                             });
-                            resolve(filePaths);
+                            Promise.all(filePaths)
+                                .then(function (res) {
+                                    var result = res.map(function (f, i) {
+                                        return {filePath: path.join(fullPath, filePaths[i]),
+                                               isDirectory: f.isDirectory()};
+                                    });
+                                    resolve(result);
+                                });
                         }
                     });
                 });

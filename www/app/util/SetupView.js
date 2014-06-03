@@ -10,10 +10,12 @@ define(function (require, exports, module) {
     
     var Backbone = require("backbone"),
         template  = require("text!app/templates/setup.hbs"),
-        strings = require("i18n!nls/strings");
-        
+        strings = require("i18n!nls/strings"),
+        RemoteFileBrowser = require("app/fs/RemoteFileBrowser");
+    var rfb;
     var SetupView = Backbone.View.extend({
-        initialize: function () {
+        initialize: function (context) {
+            this.defaultContext = context || "../examples";
         },
         render: function () {
             var t = Handlebars.compile(template);
@@ -25,6 +27,7 @@ define(function (require, exports, module) {
                 "z-index": 4
             });
             $("body").append(this.$el);
+            rfb = new RemoteFileBrowser(this.defaultContext, "#remote-files");
             return this;
         },
         hide: function () {
