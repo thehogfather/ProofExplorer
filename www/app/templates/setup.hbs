@@ -3,26 +3,11 @@
         <h3 class="panel-title">{{SETUP}}</h3>
      </div>
     <div class="panel-body">
-        <div class="input-group input-group-sm form-group">
-            <span id="change-context" class="input-group-addon">{{CONTEXT}}</span>
-            <input type="text" id="txt-context" class="form-control" placeholder="set source folder" value="../examples"/>
-        </div>
-        <div class="input-group input-group-sm form-group">
-            <span id="typecheck" class="input-group-addon">{{THEORY}}</span>
-            <div class="input-group-btn input-group-sm" id="theory-files">
-                <button type="button" class="btn btn-default dropdown-toggle form-control" data-toggle="dropdown">
-                    <span class="filename">{{SELECT_FILE}}</span> <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu" >
-
-                </ul>
-            </div>
-        </div>
+        <div id="remote-files"></div>        
         <div class="input-group input-group-sm form-group">
             <span  class="input-group-addon">{{FORMULA}}</span>
             <input type="text" id="txt-formula" class="form-control input-sm" placeholder="" value="dn_button_predictable"/>
         </div>
-        <div id="remote-files"></div>
         <button id="prove-formula"` type="button" class="btn btn-primary btn-sm">{{PROVE_FORMULA}}</button>    
     </div>
 </div>

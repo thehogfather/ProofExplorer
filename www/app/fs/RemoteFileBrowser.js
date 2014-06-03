@@ -20,7 +20,8 @@ define(function (require, exports, module) {
         
         ws.send({type: "readDirectory", filePath: initialPath}, function (err, res) {
             if (!err) {
-                treeList = new TreeList(res, el);
+                var data = {name: initialPath, path: initialPath, children: res.files, isDirectory: true};
+                treeList = new TreeList(data, el);
                 treeList.addListener("SelectedItemChanged", function (event) {
                     var data = event.data;
                     rfb.getRemoteDir(data);
@@ -32,9 +33,9 @@ define(function (require, exports, module) {
     RemoteFileBrowser.prototype.getRemoteDir = function (selectedItem) {
         //maybe there is a way to make this more efficient?
         if (selectedItem.isDirectory && !selectedItem.children && !selectedItem._children) {
-            ws.send({type: "readDirectory", filePath: selectedItem.filePath}, function (err, contents) {
+            ws.send({type: "readDirectory", filePath: selectedItem.path}, function (err, contents) {
                 if (!err) {
-                    selectedItem.children = contents;
+                    selectedItem.children = contents.files;
                     treeList.render(selectedItem);
                 }
             });

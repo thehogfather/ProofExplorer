@@ -35,6 +35,9 @@ define(function (require, exports, module) {
         },
         show: function () {
             this.$el.show();
+        },
+        getSelectedFile: function () {
+            return rfb.getSelectedFile();
         }
     });
     module.exports = SetupView;

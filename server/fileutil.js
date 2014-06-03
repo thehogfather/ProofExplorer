@@ -33,17 +33,19 @@
                         if (err) {
                             reject(err);
                         } else {
-                            var filePaths = files.map(function (file) {
+                            var promises = files.map(function (file) {
                                 var fpath = path.join(fullPath, file);
                                 return stat(fpath);
                             });
-                            Promise.all(filePaths)
+                            Promise.all(promises)
                                 .then(function (res) {
                                     var result = res.map(function (f, i) {
-                                        return {filePath: path.join(fullPath, filePaths[i]),
-                                               isDirectory: f.isDirectory()};
+                                        return {path: path.join(fullPath, files[i]),
+                                               isDirectory: f.isDirectory(), name: files[i]};
                                     });
                                     resolve(result);
+                                }, function (err) {
+                                    reject(err);
                                 });
                         }
                     });

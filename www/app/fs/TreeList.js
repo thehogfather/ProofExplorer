@@ -12,13 +12,14 @@ define(function (require, exports, module) {
         listHeight = 28,
         childIndent = 10,
         duration = 200,
-        contextMenuItems = ["New File", "New Folder", "Rename", "Delete"],
+//        contextMenuItems = ["New File", "New Folder", "Rename", "Delete"],
         selectedData;
     var globalId = 0;
     var eventDispatcher = require("app/util/eventDispatcher"),
-        d3 = require("d3");
+        d3 = require("d3"),
+        property = require("app/util/property");
     
-    require("lib/d3.layout.treelist");
+    require("d3.layout.treelist");
     /**
         Find the node with the give id
     */
@@ -43,46 +44,46 @@ define(function (require, exports, module) {
     
     function TreeList(d, _el) {
         eventDispatcher(this);
-        var fst = this;
+//        var fst = this;
         data = d;
         el = _el || "body";
-      
+        this.labelFunction = property.call(this, function (d) { return d.name; });
         this.render(data);
         
-        function createMenu(menuItems, sourceEvent, selectedData) {
-            var div = d3.select("body").append("div").attr("class", "contextmenu")
-                .style("position", "absolute")
-                .style("top", sourceEvent.pageY + "px")
-                .style("left", sourceEvent.pageX + "px");
-            var ul = div.append("ul").style("list-style", "none");
-            
-            var menus = ul.selectAll("li.menuitem").data(menuItems).enter()
-                .append("li").attr("class", "menuitem")
-                .html(String);
-            
-            menus.on("click", function (d) {
-                //we want to rename or delete the actually selected data but we need to add items to the selected data
-                //only if the selected item is a directory, if not a directory we want to add to the parent
-                var data = ["Rename", "Delete"].indexOf(d) > -1 ? selectedData :
-                            selectedData.isDirectory ? selectedData : selectedData.parent;
-                var event = {type: d, data: data};
-                console.log(event);
-                fst.fire(event);
-                div.remove();
-            });
-        }
-        
-        //create custom context menu for the list item
-        d3.select(el).node().oncontextmenu = function (event) {
-            event.preventDefault();
-            d3.select("div.contextmenu").remove();
-            createMenu(contextMenuItems, event, selectedData);
-            return false;
-        };
-        //create event to clear any context menu items
-        document.onclick = function () {
-            d3.select("div.contextmenu").remove();
-        };
+//        function createMenu(menuItems, sourceEvent, selectedData) {
+//            var div = d3.select("body").append("div").attr("class", "contextmenu")
+//                .style("position", "absolute")
+//                .style("top", sourceEvent.pageY + "px")
+//                .style("left", sourceEvent.pageX + "px");
+//            var ul = div.append("ul").style("list-style", "none");
+//            
+//            var menus = ul.selectAll("li.menuitem").data(menuItems).enter()
+//                .append("li").attr("class", "menuitem")
+//                .html(String);
+//            
+//            menus.on("click", function (d) {
+//                //we want to rename or delete the actually selected data but we need to add items to the selected data
+//                //only if the selected item is a directory, if not a directory we want to add to the parent
+//                var data = ["Rename", "Delete"].indexOf(d) > -1 ? selectedData :
+//                            selectedData.isDirectory ? selectedData : selectedData.parent;
+//                var event = {type: d, data: data};
+//                console.log(event);
+//                fst.fire(event);
+//                div.remove();
+//            });
+//        }
+//        
+//        //create custom context menu for the list item
+//        d3.select(el).node().oncontextmenu = function (event) {
+//            event.preventDefault();
+//            d3.select("div.contextmenu").remove();
+//            createMenu(contextMenuItems, event, selectedData);
+//            return false;
+//        };
+//        //create event to clear any context menu items
+//        document.onclick = function () {
+//            d3.select("div.contextmenu").remove();
+//        };
     }
     
     TreeList.prototype.render =   function (parent, noAnimation) {
@@ -98,6 +99,7 @@ define(function (require, exports, module) {
         }
         
         var tree = d3.layout.treelist().childIndent(childIndent).nodeHeight(listHeight);
+        
         var nodes = tree.nodes(data);
         var ul = d3.select(el).select("ul");
         if (ul.empty()) {
@@ -134,9 +136,9 @@ define(function (require, exports, module) {
         var listWrap = enteredNodes.append("div").classed("line", true);
         var updatedNodes = nodeEls, exitedNodes = nodeEls.exit();
         var chevron = listWrap.append("span").attr("class", function (d) {
-            var icon = d.children ? " glyphicon-chevron-down"
-                : d._children ? "glyphicon-chevron-right" : "";
-            return "chevron glyphicon " + icon;
+            var icon = d.children ? " fa-chevron-down"
+                : d._children ? "fa-chevron-right" : "";
+            return "chevron fa " + icon;
         });
         chevron.on("click", function (d) {
             toggleChildren(d);
@@ -157,19 +159,19 @@ define(function (require, exports, module) {
         
         //add icons for folder for file
         listWrap.append("span").attr("class", function (d) {
-            var icon = d.isDirectory ? "glyphicon-folder-close"
-                : "glyphicon-file";
-            return "glyphicon " + icon;
+            var icon = d.isDirectory ? "fa-folder"
+                : "fa-file";
+            return "fa " + icon;
         });
         //add text
         listWrap.append("span").attr("class", "label")
-            .html(function (d) { return d.name; });
+            .html(fst.labelFunction());
 
         //update chevron direction
         nodeEls.select("span.chevron").attr("class", function (d) {
-            var icon = d.children ? " glyphicon-chevron-down"
-                : d._children ? "glyphicon-chevron-right" : "";
-            return "chevron glyphicon " + icon;
+            var icon = !d.isDirectory ? "" : d.children ? " fa-chevron-down"
+                :  "fa-chevron-right";
+            return "chevron fa " + icon;
         });
         //update list class
         nodeEls.attr("class", function (d, i) {

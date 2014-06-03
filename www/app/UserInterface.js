@@ -5,12 +5,12 @@
  */
 /*jshint unused: true, undef: true*/
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, $, window, Handlebars */
+/*global define, $, window */
 define(function (require, exports, module) {
     "use strict";
     var d3 = require("d3"),
         TreeVis = require("app/TreeVis"),
-//        proofCommands = require("app/util/ProofCommands"),
+        proofCommands = require("app/util/ProofCommands"),
         PVSSession = require("app/PVSSession"),
         StatusLogger = require("app/util/StatusLogger"),
         SetupView = require("app/util/SetupView"),
@@ -18,21 +18,45 @@ define(function (require, exports, module) {
         AllCommandsView = require("app/AllCommandsView"),
         favoriteCommands = require("app/FavoriteCommands").getInstance(),
         ToolPalette  = require("app/ToolPalette"),
-        fileListTemplate = require("text!app/templates/filelist.hbs"),
         strings = require("i18n!nls/strings"),
         CodeMirror = require("cm/lib/codemirror"),
         proofCommandHints = require("app/editor/ProofCommandHints");
     
     var draggedCommand,
         targetNodeEvent,
+        session,
         proofCommandEditor,
-        session = new PVSSession(),
         treeVis, viewportControls;
     var setup = new SetupView();
 
-    function commandClicked(label, command) {
-        proofCommandEditor.setValue(command);
-        proofCommandEditor.focus();
+    function processCommand(command) {
+        if (command && command.trim().length) {
+            var icon, iconclass;
+            if (command !== "(postpone)" || command !== "(undo)") {
+                treeVis.addCommand(session.getActiveState(), command)
+                    .then(function (node) {//add spinner
+                        icon = node.element.select(".icon .fa");
+                        iconclass = icon.attr("class");
+                        icon.attr("class", "fa fa-spinner fa-fw");
+                    });
+            }
+            session.sendCommand(proofCommand(command))
+                .then(function (res) {
+                    console.log(res);
+                    if (icon) {icon.attr("class", iconclass); icon = null; }
+                    StatusLogger.log(res);
+                });
+        }
+    }
+    
+    function commandClicked(label, cmd) {
+        var command = proofCommands.getCommand(cmd);
+        if (command.params) {
+            proofCommandEditor.setValue(command.command);
+            proofCommandEditor.focus();
+        } else {
+            processCommand(cmd);
+        }
     }
     
     function onTreeNodeMouseOver(event) {
@@ -60,16 +84,6 @@ define(function (require, exports, module) {
         return {method: "proof-command", params: [command]};
     }
     
-    function populateTheoryFileList(files) {
-        var t = Handlebars.compile(fileListTemplate);
-        var html = t(files);
-        $("#theory-files ul").html(html);
-        //add listener for setting the selected theory file
-        $("#theory-files li").on("click", function () {
-            $("#theory-files button span.filename").html($(this).html());
-        });
-    }
-    
     function reloadToolbox(event) {
         ToolPalette.create(event.commands)
             .on("commandclicked", commandClicked);
@@ -78,55 +92,29 @@ define(function (require, exports, module) {
     function bindToolBoxEvents() {
         favoriteCommands.addListener("commandadded", reloadToolbox)
             .addListener("commandremoved", reloadToolbox);
-        d3.select("#txt-context").on("blur", function () {
-            var context = d3.select(this).property("value");
-            var spinner = d3.select("#change-context").append("i").attr("class", "fa fa-spinner fa-spin");
-            session.changeContext(context)
-                .then(function (res) {
-                    console.log(res);
-                    spinner.remove();
-                    populateTheoryFileList(res.files);
-                }, function (err) {
-                    console.log(err);
-                    spinner.attr("class", "fa fa-warning");
-                });
-        });
-        
         d3.select("#prove-formula").on("click", function () {
             var formula = d3.select("#txt-formula").property("value");
-            var theory = d3.select("#theory-files button span.filename").text().split(".")[0];
+            var theoryFile = setup.getSelectedFile();
+            var theory = theoryFile.name.split(".")[0];
+            var context = theoryFile.parent.path;
             if (formula && theory) {
-                session.typeCheck(theory)
-                    .then(function (res) {
+                session.reset().changeContext(context)
+                    .then(function () {
+                        return session.typeCheck(theory);
+                    }).then(function (res) {
                         StatusLogger.log(res);
                         return session.proveFormula(formula, theory);
                     }).then(function (res) {
                         StatusLogger.log(res);
                         setup.hide();
+                    }).catch(function (err) {
+                        console.log(err);
                     });
             }
         });
     }
     
-    function processCommand(command) {
-        if (command && command.trim().length) {
-            var icon, iconclass;
-            if (command !== "(postpone)" || command !== "(undo)") {
-                treeVis.addCommand(session.getActiveState(), command)
-                    .then(function (node) {//add spinner
-                        icon = node.element.select(".icon .fa");
-                        iconclass = icon.attr("class");
-                        icon.attr("class", "fa fa-spinner fa-fw");
-                    });
-            }
-            session.sendCommand(proofCommand(command))
-                .then(function (res) {
-                    console.log(res);
-                    if (icon) {icon.attr("class", iconclass); icon = null; }
-                    StatusLogger.log(res);
-                });
-        }
-    }
+  
     
     function bindEvents() {        
         function _sendCommand(command) {
@@ -154,7 +142,7 @@ define(function (require, exports, module) {
             _sendCommand(command);
         });
         //create codemirror instance for sending commands
-        proofCommandEditor = new CodeMirror(d3.select("#txtCommand").node(), {
+        proofCommandEditor = new CodeMirror(d3.select("#txtCommand").html("").node(), {
             mode: "lisp", lineNumbers: false
         });
         //use a keymap to get the enter key
@@ -207,10 +195,10 @@ define(function (require, exports, module) {
         
         function createControls() {
             //map the string data to create objects whose command attributes is the string
-
             var tb = d3.select("svg").insert("g", "g").attr("transform", "translate(0 "  + viewportControlWidth + ")");
             viewportControls = d3.select("svg").insert("g", "g").classed("viewport-control", true);
-            viewportControls.append("foreignObject").attr("x", 0).attr("y", 0).attr("width", viewportControlWidth).attr("height", viewportControlHeight)
+            viewportControls.append("foreignObject").attr("x", 0).attr("y", 0)
+                .attr("width", viewportControlWidth).attr("height", viewportControlHeight)
                 .append("xhtml:span").classed("scale", true);
             
             var navGroup = tb.append("g").attr("class", "nav-buttons")
@@ -222,6 +210,7 @@ define(function (require, exports, module) {
                 });
         }
         
+        session = new PVSSession();
         session.addListener("treecreated", function (event) {
             treeVis = new TreeVis(event.tree);
             treeVis.initialise(session);
@@ -230,7 +219,7 @@ define(function (require, exports, module) {
                 .on("menuclicked", function (label) {
                     label = label.trim();
                     if (label ===  strings.OPEN) {
-                        //setup.show();
+                        setup.show();
                     } else if (label ===  strings.QUIT) {
                         processCommand("(quit)");
                     } else if (label === strings.CONFIGURE_FAVORITE_COMMANDS) {

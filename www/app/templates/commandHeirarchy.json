@@ -1,29 +1,29 @@
 {
     "annotation": [
-        {"command": "(label \"string\" fnums)", "icon": "fa-tag", "label": "label"},
-        {"command": "(unlabel fnum)", "label": "unlabel"},
-        {"command": "(comment \"string\")", "label": "comment", "icon": "fa-comments"}
+        {"command": "(label \"string\" fnums)", "icon": "fa-tag", "label": "label", "params": true},
+        {"command": "(unlabel fnum)", "label": "unlabel", "params": true},
+        {"command": "(comment \"string\")", "label": "comment", "icon": "fa-comments", "params": true}
     ],
     "propositional": [
         {"command": "(split)", "icon": "fa-yahoo", "label": "split"},
-        {"command": "(case \"expr\")", "icon": "fa-share-alt", "label": "case"},
+        {"command": "(case \"expr\")", "icon": "fa-share-alt", "label": "case", "params": true},
         {"command": "(lift-if)", "icon": "fa-heat", "label": "lift-if"}
     ],
     "quantifier": [
         {"command": "(skosimp*)", "icon": "fa-exclamation-circle", "label": "skosimp*"},
         {"command": "(skeep)", "label": "skeep"},
-        {"command": "(inst? fnum :subst(\"old_expr\" \"new_expr\"))", "icon": "fa-question-circle", "label": "inst?"}
+        {"command": "(inst? fnum :subst(\"old_expr\" \"new_expr\"))", "icon": "fa-question-circle", "label": "inst?", "params": true}
     ],
     "equality": [
         {"command": "(beta)", "icon": "fa-bold", "label": "beta"},
         {"command": "(apply-extensionality)", "icon": "sampler", "label": "apply-extensionality"},
-        {"command": "(name-replace \"string\" \"expr\")", "icon": "fa-edit", "label": "name-replace"},
-        {"command": "(replace* fnums)", "icon": "fa-retweet", "label": "replace*"}
+        {"command": "(name-replace \"string\" \"expr\")", "icon": "fa-edit", "label": "name-replace", "params": true},
+        {"command": "(replace* fnums)", "icon": "fa-retweet", "label": "replace*", "params": true}
     ],
     "definitions": [
-        {"command": "(expand \"expr\")", "icon": "fa-expand", "label": "expand"},
-        {"command": "(lemma \"lemma_name\")", "icon": "book_open", "label": "lemma"},
-        {"command": "(typepred \"expr\")", "icon": "text_bigger", "label": "typepred"},
+        {"command": "(expand \"expr\")", "icon": "fa-expand", "label": "expand", "params": true},
+        {"command": "(lemma \"lemma_name\")", "icon": "book_open", "label": "lemma", "params": true},
+        {"command": "(typepred \"expr\")", "icon": "text_bigger", "label": "typepred", "params": true},
         {"command": "(all-typepreds)", "label": "all-typepreds"}
     ],
     "simplification": [

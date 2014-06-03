@@ -20,7 +20,8 @@ define(function (require, exports, module) {
     function sequentString(state) {
         var antecedents = (state.sequent && state.sequent.antecedents) || [],
             succedents = (state.sequent && state.sequent.succedents) || [];
-        return antecedents.map(function (d) {return d.formula; }).join("").concat(succedents.map(function (d) {return d.formula; }).join(""));
+        return antecedents.map(function (d) {return d.formula; }).join("")
+            .concat(succedents.map(function (d) {return d.formula; }).join(""));
     }
 
     function nodeSearch(nodeid) {
@@ -54,15 +55,7 @@ define(function (require, exports, module) {
     function isParent(parent, child) {
         return parent !== child && child.indexOf(parent) === 0;
     }
-//    
-//    function levelUp(s) {
-//        return s.substring(0, s.lastIndexOf("."));
-//    }
-//    
-//    function areSiblings(child1, child2) {
-//        return levelUp(child1) === levelUp(child2);
-//    }
-//    
+    
     /**
         This function inspects the oldstate and new state name and adds new children
         to the tree if needed. E.g., if old state was test and we are in a new state test.1
@@ -159,6 +152,17 @@ define(function (require, exports, module) {
         allStates = {};
         ps = this;
     }
+    
+    /**
+        resets session variable
+    */
+    PVSSession.prototype.reset = function() {
+        currentState = undefined;
+        proofTree = undefined;
+        allStates = {};
+        activeState = undefined;
+        return this;
+    };
     /**
          Updates the current state using the data from the pvsresponse. It fires
          either a `statechanged` or a `stateunchanged` event to signal the status of the prooftree
