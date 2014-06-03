@@ -110,20 +110,24 @@ define(function (require, exports, module) {
     
     function processCommand(command) {
         if (command && command.trim().length) {
+//            var icon;
             if (command !== "(postpone)" || command !== "(undo)") {
-                treeVis.addCommand(session.getActiveState(), command);
+                treeVis.addCommand(session.getActiveState(), command)
+                    .then(function (node) {//add spinner
+//                        icon = node.element.select(".icon .fa");
+//                        icon.classed("fa-spin", true).classed("fa-fw", false);
+                    });
             }
             session.sendCommand(proofCommand(command))
                 .then(function (res) {
                     console.log(res);
+//                    if (icon) {icon.classed("fa-spin", false).classed("fa-fw", true); icon = null; }
                     StatusLogger.log(res);
                 });
         }
     }
     
-    function bindEvents() {
-        
-        
+    function bindEvents() {        
         function _sendCommand(command) {
             processCommand(command);
             //clear the textbox
@@ -152,29 +156,49 @@ define(function (require, exports, module) {
         proofCommandEditor = new CodeMirror(d3.select("#txtCommand").node(), {
             mode: "lisp", lineNumbers: false
         });
-        
-        CodeMirror.registerHelper("hint", "proofhint", proofCommandHints);
-        d3.select("#txtCommand").on("keydown", function () {
-            if (d3.event.which === 13) {
-                _sendCommand(d3.select("#txtCommand").property("value"));
+        //use a keymap to get the enter key
+        proofCommandEditor.addKeyMap({
+            Enter: function (cm) {
+                _sendCommand(cm.getValue());
             }
         });
-        
-        //add listener for window resize so that the height of the components on the interface are properly redistributed
-        function windowResized() {
-            var menubarHeight = $("#menubar").height(),
-                topToolBoxHeight = $("#toolbox").height(),
-                bodyHeight = $(window).height(),
-                bottomNavHeight = $("#bottom-nav").height();
-            var usableHeight = (bodyHeight - menubarHeight - bottomNavHeight - topToolBoxHeight);
-            $("#proofTree").height( usableHeight / 2);
-            $("#status").css("max-height", usableHeight / 2);
+        CodeMirror.registerHelper("hint", "proofhint", proofCommandHints);     
+    }
+     //add listener for window resize so that the height of the components on the interface are properly redistributed
+    function windowResized() {
+        var c = $("#prooftree-container")[0];
+        if (c) {
+            var proofTreeHeight = $(c.parentNode).height();
+            $("#proofTree").height(proofTreeHeight);
         }
+    }
+ 
+    function createLayout() {
+        var proofTreeContainerHtml = require("text!app/templates/prooftree.hbs"),
+            sequentContainerHtml = require("text!app/templates/sequent-container.hbs");
+        
+        var topHeight = $(".menu-wrap").height(),
+            bodyHeight = $(window).height();
+        
+        $("#content-layout").height(bodyHeight - topHeight);
+        
+        var style = "padding: 5px;border: 1px solid #bbbbb; overflow-x: hidden;";
+        $("#content-layout").w2layout({
+            name: "content-layout",
+            padding: 4,
+            panels: [
+                {type: "main", size: "50%", resizable: true, content: proofTreeContainerHtml, style: style},
+                {type: "bottom", size: "50%", resizable: true, content: sequentContainerHtml, style: style}
+            ],
+            onResize: windowResized
+        });
+        
         window.onresize = windowResized;
         windowResized();
     }
     
     function createUI() {
+        createLayout();
         reloadToolbox({});
         setup.render();
         var viewportControlHeight = 40,
@@ -183,7 +207,7 @@ define(function (require, exports, module) {
         function createControls() {
             //map the string data to create objects whose command attributes is the string
 
-            var tb = d3.select("svg").insert("g", "g").attr("transform", "translate("  + viewportControlWidth + ")");
+            var tb = d3.select("svg").insert("g", "g").attr("transform", "translate(0 "  + viewportControlWidth + ")");
             viewportControls = d3.select("svg").insert("g", "g").classed("viewport-control", true);
             viewportControls.append("foreignObject").attr("x", 0).attr("y", 0).attr("width", viewportControlWidth).attr("height", viewportControlHeight)
                 .append("xhtml:span").classed("scale", true);
@@ -195,47 +219,6 @@ define(function (require, exports, module) {
                 .on("click", function () {
                     processCommand("(undo)");
                 });
-            
-//            var ghostNode;
-
-           /* drag.on("dragstart", function (d) {
-                ghostNode = tb.insert("circle", "g").attr("r", iconRad)
-                    .attr("cx", d3.event.sourceEvent.x)
-                    .attr("cy", d3.event.sourceEvent.y)
-                    .attr("class", "ghost")
-                    .style("fill", proofCommands.getColor(d.command))
-                    .style("stroke", d3.rgb(proofCommands.getColor(d.command)).darker())
-                    .style("display", "none");
-                draggedCommand = d;
-                d3.event.sourceEvent.stopPropagation();
-            }).on("drag", function () {
-                var pos = d3.mouse(tb.node());
-                ghostNode.attr("cx", pos[0]).attr("cy", pos[1]).style("display", null);
-            }).on("dragend", function (d) {
-                if (targetNodeEvent) {
-                    var tData = targetNodeEvent.nodeData,
-                        tEl = targetNodeEvent.nodeEl;
-                    session.postponeUntil(targetNodeEvent.nodeData.id)
-                        .then(function () {
-                            if (d.command !== "(postpone)") {
-                                treeVis.addCommand(tData, d.command, d3.select(tEl.node().parentNode))
-                                    .then(function (node) {
-                                        console.debug(node);
-                                        var pvsCommand = proofCommand(d.command);
-                                        //The sendCommand is an asynchronous call to process a command on a branch of a proof tree
-                                        session.sendCommand(pvsCommand)
-                                            .then(function (res) {
-                                                StatusLogger.log(res);
-                                            });
-                                    });
-                            }
-                        });
-                }
-                ghostNode.remove();
-                draggedCommand = null;
-                
-            });
-            tb.selectAll("circle").call(drag);*/
         }
         
         session.addListener("treecreated", function (event) {

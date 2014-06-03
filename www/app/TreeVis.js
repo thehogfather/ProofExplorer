@@ -133,7 +133,7 @@ define(function (require, exports, module) {
                 g.select(".command").remove();
                 var c = g.insert("circle", "circle");
                 decorateCommandNode(c);
-                resolve(node);
+                resolve({node: node, element: g});
             }
         });
     };
@@ -335,7 +335,7 @@ define(function (require, exports, module) {
         //question is how we make sure the server has the right state
         return addCommand(target, source.command)
             .then(function (target) {
-                return commandRunner(target, target.command);
+                return commandRunner(target.node, target.command);
             })
             .then(function () {
                 var newChildren = target.children;
