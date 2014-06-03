@@ -4,7 +4,7 @@
  * @date 5/10/14 21:51:36 PM
  */
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, d3, require, $, brackets, window, Handlebars */
+/*global define, $, Handlebars */
 define(function (require, exports, module) {
     "use strict";
     

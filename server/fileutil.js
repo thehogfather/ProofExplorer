@@ -20,6 +20,28 @@
             });
         });
     }
+    
+    function readDirectory(fullPath) {
+        return stat(fullPath).then(function (f) {
+            if (f.isDirectory()) {
+                return new Promise(function (resolve, reject) {
+                    fs.readdir(fullPath, function (err, files) {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            var filePaths = files.map(function (file) {
+                                return path.join(fullPath, file);
+                            });
+                            resolve(filePaths);
+                        }
+                    });
+                });
+            } else {
+                return Promise.reject({err: "Path is not a directory."});
+            }
+        });
+    }
+    
     /**
         Recursively reads the files in a directory using promises
         @param {string} fullPath the path to the directory to read
@@ -77,6 +99,7 @@
     }
 
     module.exports = {
-        getFilesInDirectory: getFilesInDirectory
+        getFilesInDirectory: getFilesInDirectory,
+        readDirectory: readDirectory
     };
 }());

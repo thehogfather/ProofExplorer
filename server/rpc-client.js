@@ -105,6 +105,14 @@
         
     function clientWebSocketFunctions() {
         return {
+            "readDirectory": function (token, socket) {
+                FileUtil.readDirectory(token.filePath)
+                    .then(function (files) {
+                        processCallback({id: token.id, files: files}, socket);
+                    }, function (err) {
+                        processCallback({id: token.id, err: err}, socket);
+                    });
+            },
             "changecontext": function (token, socket) {
                 token.request.params[0] = path.resolve(__dirname, token.request.params[0]);
                 var context = token.request.params[0];

@@ -210,7 +210,7 @@ define(function (require, exports, module) {
         var enteredNodes = node.enter()
             .insert("g", "g.node-pointer").attr("class", "node")
             .attr("transform", function (d) {
-                var x0 = parent.x0 || d.x, y0 = parent.y0 || d.y;
+                var x0 = parent.x || d.x, y0 = parent.y || d.y;
                 return "translate(" + x0 + " " + y0 + ")";
             });
 
@@ -235,7 +235,7 @@ define(function (require, exports, module) {
             .on("mouseout", onMouseOut)
             .on("mousedown", onMouseDown)
             .on("click", onClick).call(drag);
-        
+    
         //add collapse expand toggle to the top right
         enteredNodes.append("g").attr("class", "collapser").style("display", "none")
             .on("mouseover", function () { d3.select(this).style("display", null);})
