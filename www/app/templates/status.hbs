@@ -2,37 +2,38 @@
     <h5>{{result.label}}</h5>
     <div>
         {{#if result.sequent}}
-        <div class="sequent">
-             {{#if result.sequent.antecedents}}
+        <div class="sequents">
             <div class="antecedents">
                 <h6>antecedents</h6>
+                {{#if result.sequent.antecedents}}
                 <div>
                     {{#each result.sequent.antecedents}}
-                    <div> 
-                        <span>{{sequentLabel this}}</span>
-                        <textarea class="formula">{{formula}}</textarea>
-                    </div>
-                    {{/each}}
-                </div>
-            </div>
-            {{/if}}
-            <hr/>
-            {{#if result.sequent.succedents}}
-            <div class="succedents">
-                <h6>succedents</h6>
-                <div>
-                    {{#each result.sequent.succedents}}                
-                    <div> 
+                    <div class="sequent"> 
                         <span class="sequent-label">{{sequentLabel this}}</span>
                         <textarea class="formula">{{formula}}</textarea>
                     </div>
                     {{/each}}
                 </div>
+                {{/if}}
             </div>
-            {{/if}}
+            <div class="consequence"><hr/></div>
+            <div class="succedents">
+                <h6>succedents</h6>
+                {{#if result.sequent.succedents}}
+                <div>
+                    {{#each result.sequent.succedents}}                
+                    <div class="sequent"> 
+                        <span class="sequent-label">{{sequentLabel this}}</span>
+                        <textarea class="formula">{{formula}}</textarea>
+                    </div>
+                    {{/each}}
+                </div>
+                {{/if}}
+            </div>
         </div>
         {{/if}}
         <div class="commentary">
+            <h6>Commentary</h6>
             {{#each result.commentary}}
             <p>{{this}}</p>
             {{/each}}

@@ -9,7 +9,7 @@ body {
     padding: 10px;
 }
 
-.alert-tooltip .sequent {
+.alert-tooltip .sequents {
     max-height: 250px;
     max-width: 350px;
     overflow-y: auto;
@@ -26,7 +26,7 @@ div#tooltip.alert{
     alignment-baseline: text-before-edge;
     font-size: 10px;
 }
-.sequent ul {
+.sequents ul {
     list-style: none; 
     margin: 0;
     padding: 0;
@@ -99,8 +99,9 @@ div#tooltip.alert{
     border-bottom: 1px solid #ddd;
     border-radius: 0 4px 4px 0;
 }
-.sequent .CodeMirror {
+.sequents .CodeMirror {
     display: inline-block;
+    margin-left: 25px;
 }
 .CodeMirror {
     border: 1px solid #eee;
@@ -114,8 +115,8 @@ div#tooltip.alert{
 
 .sequent-label {
     display: inline-block;
-    margin-top: -10px;
-    height: 24px;
+    position: absolute;
+    top: 0;
 }
 
 #setup-group {
@@ -154,6 +155,21 @@ svg #toolbox-palette {
     overflow: auto;
 }
 
+.consequence {
+    margin-bottom: 5px;
+    margin-top: 5px;
+    padding: 1px;
+    border-left: 2px solid #bbb;
+    width: 100px;
+}
+
+.consequence hr {
+    border: 1px solid #bbb;
+}
+
+div.sequent {
+    position: relative;
+}
 /** w2ui stuff*/
 .w2ui-layout > div .w2ui-panel {
     z-index: 0;

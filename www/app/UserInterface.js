@@ -53,6 +53,7 @@ define(function (require, exports, module) {
         var command = proofCommands.getCommand(cmd);
         if (command.params) {
             proofCommandEditor.setValue(command.command);
+            proofCommandEditor.setCursor(0, command.command.length);
             proofCommandEditor.focus();
         } else {
             processCommand(cmd);
@@ -171,7 +172,7 @@ define(function (require, exports, module) {
         
         $("#content-layout").height(bodyHeight - topHeight);
         
-        var style = "padding: 5px;border: 1px solid #bbbbb; overflow-x: hidden;";
+        var style = "padding: 5px;border: 1px solid #bbbbb; overflow: hidden;";
         $("#content-layout").w2layout({
             name: "content-layout",
             padding: 4,
