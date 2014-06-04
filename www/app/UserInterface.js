@@ -190,6 +190,17 @@ define(function (require, exports, module) {
     function createUI() {
         createLayout();
         reloadToolbox({});
+        MenuBar.create()
+            .on("menuclicked", function (label) {
+                label = label.trim();
+                if (label ===  strings.OPEN) {
+                    setup.show();
+                } else if (label ===  strings.QUIT) {
+                    processCommand("(quit)");
+                } else if (label === strings.CONFIGURE_FAVORITE_COMMANDS) {
+                    AllCommandsView.create();
+                }
+            });
         setup.render();
         var viewportControlHeight = 40,
             viewportControlWidth = 90;
@@ -216,17 +227,7 @@ define(function (require, exports, module) {
             treeVis = new TreeVis(event.tree);
             treeVis.initialise(session);
             createControls();
-            MenuBar.create()
-                .on("menuclicked", function (label) {
-                    label = label.trim();
-                    if (label ===  strings.OPEN) {
-                        setup.show();
-                    } else if (label ===  strings.QUIT) {
-                        processCommand("(quit)");
-                    } else if (label === strings.CONFIGURE_FAVORITE_COMMANDS) {
-                        AllCommandsView.create();
-                    }
-                });
+            
             
             treeVis.registerCommandRunner(function (node, command) {
                 return session.postponeUntil(node.id)

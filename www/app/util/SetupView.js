@@ -33,8 +33,15 @@ define(function (require, exports, module) {
         hide: function () {
             this.$el.hide();
         },
+        events: {
+            "blur #txt-context": "rebaseDir",
+            "click #cancel": "hide"
+        },
         show: function () {
             this.$el.show();
+        },
+        rebaseDir: function (event) {
+            rfb.reBase(event.target.value);
         },
         getSelectedFile: function () {
             return rfb.getSelectedFile();

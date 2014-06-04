@@ -3,11 +3,16 @@
         <h3 class="panel-title">{{SETUP}}</h3>
      </div>
     <div class="panel-body">
+        <div class="input-group input-group-sm form-group">
+            <span  class="input-group-addon">{{PATH}}</span>
+            <input type="text" id="txt-context" class="form-control input-sm" placeholder="" value="../examples"/>
+        </div>
         <div id="remote-files"></div>        
         <div class="input-group input-group-sm form-group">
             <span  class="input-group-addon">{{FORMULA}}</span>
             <input type="text" id="txt-formula" class="form-control input-sm" placeholder="" value="dn_button_predictable"/>
         </div>
-        <button id="prove-formula"` type="button" class="btn btn-primary btn-sm">{{PROVE_FORMULA}}</button>    
+        <button id="cancel" type="button" class="btn btn-warning btn-sm pull-left">{{CANCEL}}</button>
+        <button id="prove-formula"` type="button" class="btn btn-primary btn-sm pull-right">{{PROVE_FORMULA}}</button> 
     </div>
 </div>

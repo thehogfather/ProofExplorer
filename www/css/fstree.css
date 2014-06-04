@@ -61,6 +61,7 @@ div.contextmenu {
 
 .treelist .node span {
     margin-right: 5px;
+    min-width: 7px;
 }
 
 .treelist .node .chevron {

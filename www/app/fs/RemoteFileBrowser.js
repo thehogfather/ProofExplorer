@@ -12,34 +12,49 @@ define(function (require, exports, module) {
         ws = require("app/WebSocketClient").getInstance(),
         TreeList = require("./TreeList"),
         initialPath,
-        treeList;
-    function RemoteFileBrowser(_path, el) {
+        treeList,
+        el;
+    
+    function RemoteFileBrowser(_path, _el) {
         eventDispatcher(this);
         initialPath = _path;
+        el = _el;
+        this.reBase(initialPath);
+    }
+    
+    RemoteFileBrowser.prototype.reBase = function (path) {
         var rfb = this;
-        
-        ws.send({type: "readDirectory", filePath: initialPath}, function (err, res) {
+        ws.send({type: "readDirectory", filePath: path}, function (err, res) {
             if (!err) {
-                var data = {name: initialPath, path: initialPath, children: res.files, isDirectory: true};
+                var data = {name: path, path: path, children: res.files, isDirectory: true};
                 treeList = new TreeList(data, el);
                 treeList.addListener("SelectedItemChanged", function (event) {
                     var data = event.data;
-                    rfb.getRemoteDir(data);
+                    if (data.isDirectory && !data.children && !data._children) {
+                        rfb.getRemoteDir(data.path)
+                            .then(function (files) {
+                                data.children = files;
+                                treeList.render(data);
+                            }, function (err) {
+                                console.log(err);
+                            });
+                    }
                 });
             }
         });
-    }
+    };
     
-    RemoteFileBrowser.prototype.getRemoteDir = function (selectedItem) {
+    RemoteFileBrowser.prototype.getRemoteDir = function (path) {
         //maybe there is a way to make this more efficient?
-        if (selectedItem.isDirectory && !selectedItem.children && !selectedItem._children) {
-            ws.send({type: "readDirectory", filePath: selectedItem.path}, function (err, contents) {
+        return new Promise(function (resolve, reject) {
+            ws.send({type: "readDirectory", filePath: path}, function (err, contents) {
                 if (!err) {
-                    selectedItem.children = contents.files;
-                    treeList.render(selectedItem);
+                    resolve(contents.files);
+                } else {
+                    reject(err);
                 }
             });
-        }
+        });
     };
     
     RemoteFileBrowser.prototype.getSelectedFile = function () {

@@ -7,10 +7,8 @@
 /*global define*/
 define(function (require, exports, module) {
     "use strict";
-//    var d3 = require("d3");
     var commandsHeirarchy = require("text!app/templates/commandHeirarchy.json");
-//    var colors = d3.scale.category20();
-    var navCommands = [/*{label: "postpone", icon: "fa-step-forward", command: "(postpone)"},*/ {label: "undo", icon: "fa-reply", command:"(undo)"}];
+    var navCommands = [{label: "undo", icon: "fa-reply", command:"(undo)"}];
 
     ///FIXME restructure these functions for efficiency
     var allCommands = (function (str) {

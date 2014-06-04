@@ -20,9 +20,7 @@ define(function (require, exports, module) {
         CONTEXT: "Context",
         SETUP: "Setup",
         FORMULA: "Formula",
-        
         SELECT_FILE: "Select File",
-        
-        
+        PATH: "Path"
     };
 });

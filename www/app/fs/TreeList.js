@@ -47,6 +47,7 @@ define(function (require, exports, module) {
 //        var fst = this;
         data = d;
         el = _el || "body";
+        d3.select(el).html("");
         this.labelFunction = property.call(this, function (d) { return d.name; });
         this.render(data);
         
