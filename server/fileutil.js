@@ -21,6 +21,24 @@
         });
     }
     /**
+     Reads the content of the specified file
+     @param {string} filePath the path to the file to read
+     @param {?string='utf8'} encoding the encoding of the file
+     @returns {Promise} a promise that resolves with the content of the file
+    */
+    function readFile(filePath, encoding) {
+        encoding = encoding || "utf8";
+        return new Promise(function (resolve, reject) {
+            fs.readFile(filePath, {encoding: encoding}, function (err, content) {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(content);
+                }
+            });
+        });
+    }
+    /**
         Reads the files/folders in the current directory and returns their path and whether or not they are files or folders
         @param {string} fullPath the path to read
         @returns {Promise} a promise that resolves with an array of files present in the current directory
@@ -114,6 +132,7 @@
 
     module.exports = {
         getFilesInDirectory: getFilesInDirectory,
-        readDirectory: readDirectory
+        readDirectory: readDirectory,
+        readFile: readFile
     };
 }());

@@ -4,3 +4,4 @@ node_modules
 pvsbin
 *.prf
 .pvscontext
+examples/robins_test

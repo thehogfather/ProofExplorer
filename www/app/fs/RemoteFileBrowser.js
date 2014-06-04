@@ -43,6 +43,7 @@ define(function (require, exports, module) {
                                 console.log(err);
                             });
                     }
+                    rfb.fire(event);
                 });
             }
         });

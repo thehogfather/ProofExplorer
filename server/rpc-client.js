@@ -23,7 +23,7 @@
         ws = require("ws"),
         clientid = 0,
         clientSocket;
-    
+    var theoremRegex = /(\w+)\s*\:\s*(THEOREM|LEMMA|CONJECTURE)/g;
     var argv = require("minimist")(process.argv.slice(2));
     
     var expressServer = express();//this is how the client sends messages to the PVS server
@@ -107,6 +107,18 @@
         
     function clientWebSocketFunctions() {
         return {
+            "getTheorems": function (token, socket) {
+                FileUtil.readFile(token.filePath)
+                    .then(function (content) {
+                        var theorems = [], match;
+                        while ((match = theoremRegex.exec(content))) {
+                            theorems.push(match[1]);
+                        }
+                        processCallback({id: token.id, theorems: theorems}, socket);
+                    }, function (err) {
+                        processCallback({id: token.id, err: err}, socket);
+                    });
+            },
             "readDirectory": function (token, socket) {
                 FileUtil.readDirectory(token.filePath)
                     .then(function (files) {
@@ -116,6 +128,7 @@
                     });
             },
             "changecontext": function (token, socket) {
+                ///FIXME investigate potentials issues with symlinks
                 token.request.params[0] = path.resolve(__dirname, token.request.params[0]);
                 var context = token.request.params[0];
                 makePVSRequest(token.request)
