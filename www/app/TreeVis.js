@@ -263,6 +263,7 @@ define(function (require, exports, module) {
             });
         updatedNodes.classed("node", true)
             .classed("active", function (d) { return d.active; })
+            .classed("complete", function (d) {return d.complete; })
             .classed("collapsed", function (d) {return d._children; });
 
         //update label pos

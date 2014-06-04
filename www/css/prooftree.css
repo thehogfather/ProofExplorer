@@ -62,6 +62,10 @@ circle.ghost {
     stroke-width: 4px;   
 }
 
+.node.complete circle.state{
+    fill: #3131d6;
+}
+
 .node text {
     alignment-baseline: text-after-edge;
     text-anchor: start;

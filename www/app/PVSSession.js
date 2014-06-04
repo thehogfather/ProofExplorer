@@ -85,7 +85,13 @@ define(function (require, exports, module) {
             return state;
         }
         
-        if (oldState && isChild(newState.label, oldState.label)) {//new state is a child of oldstate
+        if (newState.result && newState.result === "Q.E.D.") {//proof is complete
+            state = tree.findDFS(null, nodeSearch(oldState.label));
+            if (state) {
+                state.active = false;
+                state.complete = true;
+            }
+        } else if (oldState && isChild(newState.label, oldState.label)) {//new state is a child of oldstate
             if (!allStates[newState.label]) {
                 //create all the subgoal children 
                 children = [];
@@ -128,6 +134,10 @@ define(function (require, exports, module) {
                     throw new Error("state not found!");
                 }
             }
+        }  else if (!isChild(newState.label, oldState.label)) { //old branch is complete
+            state = tree.findDFS(null, nodeSearch(oldState.label));
+            if (state) { state.complete = true; }
+            setActiveNode(newState.label, tree);
         } else {
             //new state is not a descendant so maybe we have just done postpones
             setActiveNode(newState.label, tree);
