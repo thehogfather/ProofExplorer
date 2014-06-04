@@ -121,6 +121,8 @@ define(function (require, exports, module) {
             .style("opacity", 0)
             .style("height", tree.nodeHeight() + "px")
             .on("click", function (d) {
+                toggleChildren(d);
+                fst.render(d);
                 if (selectedData !== d) {
                     selectedData = d;
                     ul.selectAll("li.node").classed("selected", function (d) {
@@ -141,23 +143,7 @@ define(function (require, exports, module) {
                 : d._children ? "fa-chevron-right" : "";
             return "chevron fa " + icon;
         });
-        chevron.on("click", function (d) {
-            toggleChildren(d);
-            fst.render(d);
-            if (selectedData !== d) {
-                selectedData = d;
-                ul.selectAll("li.node").classed("selected", function (d) {
-                    return selectedData === d;
-                });
-                var event = {type: "SelectedItemChanged", data: d};
-                // clear all editable flags
-                ul.selectAll("li.node").select(".label").attr("contentEditable", false);
-                console.log(event);
-                fst.fire(event);
-            }
-        });
-
-        
+   
         //add icons for folder for file
         listWrap.append("span").attr("class", function (d) {
             var icon = d.isDirectory ? "fa-folder"

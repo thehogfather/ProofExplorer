@@ -335,7 +335,7 @@ define(function (require, exports, module) {
         //question is how we make sure the server has the right state
         return addCommand(target, source.command)
             .then(function (target) {
-                return commandRunner(target.node, target.command);
+                return commandRunner(target.node, source.command);
             })
             .then(function () {
                 var newChildren = target.children;

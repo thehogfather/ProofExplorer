@@ -15,6 +15,10 @@ define(function (require, exports, module) {
         treeList,
         el;
     
+    function fileFilter(f) {
+        return f.name.indexOf(".") !== 0;    
+    }
+    
     function RemoteFileBrowser(_path, _el) {
         eventDispatcher(this);
         initialPath = _path;
@@ -26,7 +30,7 @@ define(function (require, exports, module) {
         var rfb = this;
         ws.send({type: "readDirectory", filePath: path}, function (err, res) {
             if (!err) {
-                var data = {name: path, path: path, children: res.files, isDirectory: true};
+                var data = {name: path, path: path, children: res.files.filter(fileFilter), isDirectory: true};
                 treeList = new TreeList(data, el);
                 treeList.addListener("SelectedItemChanged", function (event) {
                     var data = event.data;
@@ -49,7 +53,7 @@ define(function (require, exports, module) {
         return new Promise(function (resolve, reject) {
             ws.send({type: "readDirectory", filePath: path}, function (err, contents) {
                 if (!err) {
-                    resolve(contents.files);
+                    resolve(contents.files.filter(fileFilter));
                 } else {
                     reject(err);
                 }

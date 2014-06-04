@@ -21,6 +21,7 @@ define(function (require, exports, module) {
         SETUP: "Setup",
         FORMULA: "Formula",
         SELECT_FILE: "Select File",
-        PATH: "Path"
+        PATH: "Path",
+        ERROR_TEXT: "Oops... Something bad happened :/"
     };
 });

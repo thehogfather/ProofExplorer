@@ -20,7 +20,8 @@ define(function (require, exports, module) {
         ToolPalette  = require("app/ToolPalette"),
         strings = require("i18n!nls/strings"),
         CodeMirror = require("cm/lib/codemirror"),
-        proofCommandHints = require("app/editor/ProofCommandHints");
+        proofCommandHints = require("app/editor/ProofCommandHints"),
+        Alert = require("app/util/Alert");
     
     var draggedCommand,
         targetNodeEvent,
@@ -29,6 +30,11 @@ define(function (require, exports, module) {
         treeVis, viewportControls;
     var setup = new SetupView();
 
+    function displayError(err) {
+        var message = err.message || err.toString();
+        Alert.show(message, "danger", ".menu-wrap");
+    }
+    
     function processCommand(command) {
         if (command && command.trim().length) {
             var icon, iconclass;
@@ -45,7 +51,7 @@ define(function (require, exports, module) {
                     console.log(res);
                     if (icon) {icon.attr("class", iconclass); icon = null; }
                     StatusLogger.log(res);
-                });
+                }).catch(displayError);
         }
     }
     
@@ -108,9 +114,7 @@ define(function (require, exports, module) {
                     }).then(function (res) {
                         StatusLogger.log(res);
                         setup.hide();
-                    }).catch(function (err) {
-                        console.log(err);
-                    });
+                    }).catch(displayError);
             }
         });
     }
@@ -131,7 +135,7 @@ define(function (require, exports, module) {
                 session.postponeUntil(event.targetNode.id)
                     .then(function (res) {
                         StatusLogger.log(res);
-                    });
+                    }).catch(displayError);
             }).addListener("transform", function (event) {
                 //show scale and translate data
                 viewportControls.select(".scale").html("Zoom: " + Math.round(event.scale * 100) + "%");
@@ -233,7 +237,7 @@ define(function (require, exports, module) {
                 return session.postponeUntil(node.id)
                     .then(function () {
                         return session.sendCommand(proofCommand(command));
-                    });
+                    }).catch(displayError);
             });
             bindEvents();
         });

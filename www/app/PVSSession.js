@@ -13,6 +13,10 @@ define(function (require, exports, module) {
     
     var currentState, proofTree, allStates, ps, activeState;
    
+    var errorFunc = function (err) {
+        return Promise.reject(err);    
+    };
+    
     /**
     Currently this is a hack to detect uniqueness between states returned from the pvs server
     This function should be replaced immediately Sam updates the API with a field that denotes the sequent number
@@ -194,15 +198,18 @@ define(function (require, exports, module) {
             .then(function () {
                 //maybe do something with res and then typecheck
                 return comm.typeCheck(file);
-            });
+            }).catch(errorFunc);
     };
     
     PVSSession.prototype.changeContext = function (context) {
         return comm.changeContext(context);
     };
-    
+    ///FIXME at the moment this is bypassing the error that is thrown when typecheck is invoked
     PVSSession.prototype.typeCheck = function (file) {
-        return comm.typeCheck(file);
+        return comm.typeCheck(file).catch(function (err) {
+            console.log(err);
+            return Promise.resolve(err);
+        });
     };
     /**
         Sends a request to proove a formula in the given theory file. This function fires a 
@@ -221,7 +228,7 @@ define(function (require, exports, module) {
                 setActiveNode(currentState.label, proofTree);
                 ps.fire({type: "treecreated", tree: proofTree});
                 return Promise.resolve(res);
-            });
+            }).catch(errorFunc);
     };
     /**
         Sends the specified PVS [proof] command to the server. When the result has been received from the server, the current state
@@ -234,7 +241,7 @@ define(function (require, exports, module) {
         return comm.sendCommand(command)
             .then(function (res) {
                 return ps.updateCurrentState(res);
-            });
+            }).catch(errorFunc);
     };
     /**
         wrapper function for sending the postpone command to the server.
@@ -245,7 +252,7 @@ define(function (require, exports, module) {
         return comm.sendCommand({method: "proof-command", params: ["(postpone)"]})
             .then(function (res) {
                 return ps.updateCurrentState(res);
-            });
+            }).catch(errorFunc);
     };
     /**
      Utility function for running a repeated postpone until the target node has been reached.
@@ -263,7 +270,7 @@ define(function (require, exports, module) {
                     } else {
                         return postpone();
                     }
-                });
+                }).catch(errorFunc);
         }
         if (targetName === currentlyActiveName) {
             return Promise.resolve(true);

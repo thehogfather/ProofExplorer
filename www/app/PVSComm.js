@@ -23,10 +23,16 @@ define(function (require, exports, module) {
         return new Promise(function (resolve, reject) {
             WSClient.getInstance()
                 .send({type: "PVSRequest", request: comm}, function (err, res) {
+                    var response = JSON.parse(res.response);
+                    if (typeof response.jsonrpc_result === "string") {
+                        response.jsonrpc_result = JSON.parse(response.jsonrpc_result);
+                    }
                     if (err) {
                         reject(err);
+                    } else if (response.jsonrpc_result.error) {
+                        reject(response.jsonrpc_result.error);
                     } else {
-                        resolve(JSON.parse(res.response));
+                        resolve(response);
                     }
                 });
         });
