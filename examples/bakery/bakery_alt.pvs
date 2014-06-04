@@ -1,0 +1,117 @@
+bakery_alt: THEORY
+ BEGIN
+
+  Phase: TYPE = { idle, trying, critical }
+
+  Process: TYPE = [# ticket: nat, phase: Phase #]
+
+  init_process: Process = (# ticket := 0, phase := idle #)
+
+  per_try(p: Process): bool = ticket(p) = 0 AND phase(p) = idle
+  try(max: nat)(p: (per_try)): Process =
+      p WITH [ticket := max, phase := trying]
+
+  per_enter(p: Process): bool = ticket(p) > 0 AND phase(p) = trying
+  enter(p: (per_enter)): Process = p WITH [phase := critical]
+
+  per_exit(p: Process): bool = ticket(p) > 0 AND phase(p) = critical
+  exit(p: (per_exit)): Process = p WITH [ticket := 0, phase := idle]
+
+  State: TYPE = [# proc1: Process, proc2: Process #]
+  init: State = (# proc1 := init_process, proc2 := init_process #)
+  init?(st: State): bool = (st = init)
+
+  trans(pre, post: State): bool =
+      LET m = max(proc1(pre)`ticket, proc2(pre)`ticket)
+       IN (per_try(proc1(pre)) AND post = pre WITH [ proc1 := try(m + 1)(proc1(pre)) ])
+          OR (per_enter(proc1(pre)) AND ( proc2(pre)`ticket = 0 OR proc1(pre)`ticket < proc2(pre)`ticket ) AND post = pre WITH [ proc1 := enter(proc1(pre))])
+          OR (per_enter(proc1(pre)) AND NOT (proc2(pre)`ticket = 0 OR proc1(pre)`ticket < proc2(pre)`ticket) AND post = pre WITH [ proc1 := proc1(pre) ])
+          OR (per_exit(proc1(pre)) AND post = pre WITH [ proc1 := exit(proc1(pre)) ])
+	  OR (per_try(proc2(pre)) AND post = pre WITH [ proc2 := try(m + 1)(proc2(pre)) ])
+          OR (per_enter(proc2(pre)) AND ( proc1(pre)`ticket = 0 OR proc2(pre)`ticket < proc1(pre)`ticket ) AND post = pre WITH [ proc2 := enter(proc2(pre))])
+          OR (per_enter(proc2(pre)) AND NOT (proc1(pre)`ticket = 0 OR proc2(pre)`ticket < proc1(pre)`ticket) AND post = pre WITH [ proc2 := proc2(pre) ])
+          OR (per_exit(proc2(pre)) AND post = pre WITH [ proc2 := exit(proc2(pre)) ])
+	  
+
+  safe(st: State): bool = NOT (proc1(st)`phase = critical AND proc2(st)`phase = critical)
+
+  %-- attempt 1 -------------
+  % invariants discovered using the theorem prover
+  inv1(st: State): bool = NOT (proc2(st)`ticket = 0 AND critical?(phase(proc2(st))))
+  inv2(st: State): bool = NOT (proc1(st)`ticket < proc2(st)`ticket AND critical?(phase(proc2(st))))
+  inv3(st: State): bool = NOT (proc1(st)`ticket = 0 AND critical?(phase(proc1(st))))
+  inv4(st: State): bool = NOT (proc2(st)`ticket < proc1(st)`ticket AND critical?(phase(proc1(st))))
+
+  % Automaticaly proved with (grind) - Run time  = 0.38 secs.
+  always_safe: THEOREM
+    FORALL (st: State): init?(st) => safe(st)
+      AND FORALL (pre, post: State): inv1(pre) AND inv2(pre) AND inv3(pre) AND inv4(pre) AND safe(pre) AND trans(pre, post) => safe(post)
+
+
+  %-- attempt 2 -------------
+  valid_state?(st: State): bool =
+      (per_try(proc1(st)) OR per_enter(proc1(st)) OR per_exit(proc1(st)))
+       AND
+       (per_try(proc2(st)) OR per_enter(proc2(st)) OR per_exit(proc2(st)))
+
+  % Automaticaly proved with (grind) - Run time  = 0.34 secs. - only two invariants needed
+  always_safe_alt: THEOREM
+    FORALL (st: (valid_state?)): init?(st) => safe(st)
+      AND FORALL (pre, post: (valid_state?)): safe(pre) AND inv2(pre) AND inv4(pre) AND trans(pre, post) => safe(post)
+
+ END bakery_alt
+
+
+
+
+bakery_alt_pvsio: THEORY
+ BEGIN IMPORTING bakery_alt
+
+  per_tick(st: State): bool =
+      (per_try(proc1(st)) OR per_enter(proc1(st)) OR per_exit(proc1(st)))
+       AND
+       (per_try(proc2(st)) OR per_enter(proc2(st)) OR per_exit(proc2(st)))
+
+  tick_alt(m1,m2: nat)(st: (per_tick)): State =
+      LET m = max(proc1(st)`ticket, proc2(st)`ticket) IN
+      LET p1 =
+            COND per_try(proc1(st)) -> IF m1 > 0 THEN try(m1)(proc1(st)) ELSE try(m)(proc1(st)) ENDIF,
+                 per_enter(proc1(st)) ->
+		  COND proc2(st)`ticket = 0 OR proc1(st)`ticket < proc2(st)`ticket
+                   -> enter(proc1(st)),
+                       NOT (proc2(st)`ticket = 0 OR proc1(st)`ticket < proc2(st)`ticket)
+                   -> proc1(st) ENDCOND,
+                 per_exit(proc1(st)) -> exit(proc1(st)) ENDCOND,
+          p2 =
+            COND per_try(proc2(st)) -> IF m2 > 0 THEN try(m2)(proc2(st)) ELSE try(m)(proc2(st)) ENDIF,
+                 per_enter(proc2(st)) ->
+		  COND proc1(st)`ticket = 0 OR proc2(st)`ticket < proc1(st)`ticket
+                   -> enter(proc2(st)),
+                       NOT (proc1(st)`ticket = 0 OR proc2(st)`ticket < proc1(st)`ticket)
+                   -> proc2(st) ENDCOND,
+                 per_exit(proc2(st)) -> exit(proc2(st)) ENDCOND
+        IN st WITH [proc1 := p1, proc2 := p2]
+
+   tick(st: (per_tick)): State = tick_alt(proc1(st)`ticket, proc2(st)`ticket)(st)
+
+   phase2string(phase: Phase): string = COND idle?(phase) -> "idle", trying?(phase) -> "trying", critical?(phase) -> "critical" ENDCOND
+    CONVERSION phase2string
+
+   state2string(st: State): string =
+    "(# proc1 := (# phase := " + proc1(st)`phase + ", ticket := " + proc1(st)`ticket + " #)," +
+    "   proc2 := (# phase := " + proc2(st)`phase + ", ticket := " + proc2(st)`ticket + " #) #)"
+    CONVERSION state2string
+
+   sim_aux(fuel: nat)(st: (per_tick)): RECURSIVE bool =
+    IF fuel = 0 THEN println(st)
+    ELSE LET dbg = println(st), st_prime = tick(st) 
+    	  IN IF per_tick(st_prime) THEN sim_aux(fuel - 1)(st_prime) 
+	     ELSE println("permission fails") ENDIF ENDIF
+     MEASURE fuel
+
+   sim(fuel: nat)(m1,m2: nat): bool =
+    LET st = tick_alt(m1,m2)(init)
+     IN per_tick(st) IMPLIES sim_aux(fuel)(st)
+     
+
+ END bakery_alt_pvsio
