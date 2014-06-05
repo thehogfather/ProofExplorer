@@ -13,6 +13,8 @@ define(function (require, exports, module) {
     
     var currentState, proofTree, allStates, ps, activeState;
    
+    var lastCommand; ///FIXME this is a HACK!! to distinguish between a postpone and a complete branch
+    
     var errorFunc = function (err) {
         return Promise.reject(err);    
     };
@@ -136,7 +138,7 @@ define(function (require, exports, module) {
             }
         }  else if (!isChild(newState.label, oldState.label)) { //old branch is complete
             state = tree.findDFS(null, nodeSearch(oldState.label));
-            if (state) { state.complete = true; }
+            if (state && lastCommand !== "(postpone)") { state.complete = true; }
             setActiveNode(newState.label, tree);
         } else {
             //new state is not a descendant so maybe we have just done postpones
@@ -248,6 +250,7 @@ define(function (require, exports, module) {
     */
     PVSSession.prototype.sendCommand = function (command) {
         var ps = this;
+        lastCommand = command.params[0];
         return comm.sendCommand(command)
             .then(function (res) {
                 return ps.updateCurrentState(res);
@@ -259,6 +262,7 @@ define(function (require, exports, module) {
     */
     PVSSession.prototype.postpone = function () {
         var ps = this;
+        lastCommand = "(postpone)";
         return comm.sendCommand({method: "proof-command", params: ["(postpone)"]})
             .then(function (res) {
                 return ps.updateCurrentState(res);
@@ -272,6 +276,7 @@ define(function (require, exports, module) {
     PVSSession.prototype.postponeUntil = function (targetName) {
         var ps = this, currentlyActiveName = activeState.name;
         function postpone() {
+            lastCommand = "(postpone)";
             return comm.sendCommand({method: "proof-command", params: ["(postpone)"]})
                 .then(function (res) {
                     if (res.jsonrpc_result.result.label === targetName ||
