@@ -4,7 +4,7 @@
  * @date Mar 9, 2012
  * @project JSLib
  */
-/*jshint unused: true*/
+/*jshint unused: false*/
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
 /*global  require, __dirname, process */
 

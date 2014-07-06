@@ -8,22 +8,29 @@ This project is a front end for interacting with [PVS](http://pvs.csl.sri.com/) 
 
 
 ###Requirements
-The communication with the PVS xmlrpc server requires [nodejs](http://nodejs.org/download/)
+* The communication with the PVS xmlrpc server requires [nodejs](http://nodejs.org/download/)
+* PVS server. This can be obtained by compiling the latest version of [PVS](https://github.com/samowre/PVS)
+
+###Installation instructions
+* clone the repository by running `git clone https://github.com/thehogfather/ProofExplorer` or download a zip of the latest version from [here](https://github.com/thehogfather/ProofExplorer/archive/master.zip) and extract the contents.
+* change directory into the downloaded repository by running `cd ProofExplorer`
+* install the server node libraries by running
+
+	`cd server
+	`npm install
+
+###How to run
+* Start the PVS server using the --port option e.g. `pvs --port 22334
+* Start the proof explorer server by running `node rpc-client.js` from the server directory
+* Open a Chrome browser and navigate to [http://localhost:8083](http://localhost:8083)
 
 ![Screenshot](screenshot.png?raw=true)
-This web project has the following setup:
+This project has the following setup:
 
-* www/ - the web assets for the project
+* www/ - the client side code for the project
     * index.html - the entry point into the app.
     * app.js - the top-level config script used by index.html
     * app/ - the directory to store project-specific scripts.
-    * lib/ - the directory to hold third party scripts.
+    * lib/ - the directory to hold client side third party scripts.
 * tools/ - the build tools to optimize the project.
-
-To optimize, run:
-
-    node tools/r.js -o tools/build.js
-
-That build command creates an optimized version of the project in a
-**www-built** directory. The app.js file will be optimized to include
-all of its dependencies.
+* server/ - the server side code for the project. This handles communication with PVS.
