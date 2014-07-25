@@ -106,7 +106,7 @@ div#tooltip.alert{
 .CodeMirror {
     border: 1px solid #eee;
     height: auto;
-    line-height: 2;
+    line-height: 1.3;
 }
 .CodeMirror-scroll {
     overflow-y: hidden;

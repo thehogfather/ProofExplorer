@@ -26,6 +26,24 @@ define(function (require, exports, module) {
         return str;
     });
 
+	function createCodeMirror(el) {
+		return  CodeMirror.fromTextArea(el, {
+			readOnly: true,
+			mode: "pvs",
+			foldGutter: true,
+			lineNumbers: false,
+			gutters: ["CodeMirror-foldgutter"]
+		});
+	}
+	
+	function decorateWithNamesInfo(cm, namesInfo) {
+		namesInfo.forEach(function (ni) {
+			cm.markText({line: ni.place[0], ch: ni.place[1]},
+						{line: ni.place[2], ch: ni.place[3]},
+						{className: "decl"});
+		});
+	}
+	
     var StatusView = Backbone.View.extend({
         el: el,
         initialize: function (data) {
@@ -34,18 +52,21 @@ define(function (require, exports, module) {
         render: function (data) {
             var t = Handlebars.compile(template);
             this.$el.html(t(data.jsonrpc_result));
-            var h = window.outerHeight - $("#console").height();
+            var h = window.outerHeight - $("#console").height(), cm, namesInfo;
             $(".content", this.el).css("height", h + "px");
             //add codemirror to view the formula
             if ($(".formula", this.el)) {
-                $(".formula", this.el).each(function (n, el) {
-                    CodeMirror.fromTextArea(el, {
-                        mode: "pvs",
-                        foldGutter: true,
-                        lineNumbers: false,
-                        gutters: ["CodeMirror-foldgutter"]
-                    });
+                $(".antecedents .formula", this.el).each(function (n, el) {
+					cm = createCodeMirror(el);
+					//mark the texts using the names info data
+					namesInfo = data.jsonrpc_result.result.sequent.antecedents[n]["names-info"];
+					decorateWithNamesInfo(cm, namesInfo);
                 });
+				$(".succedents .formula", this.el).each(function (n, el) {
+					cm = createCodeMirror(el);
+					namesInfo = data.jsonrpc_result.result.sequent.succedents[n]["names-info"];
+					decorateWithNamesInfo(cm, namesInfo);
+				});
             }
             return this;
         }
