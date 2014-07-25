@@ -32,7 +32,7 @@
     
     var httpServer = http.createServer(expressServer);
     //declare hosts and ports
-    var pvsHost =  "localhost",
+    var pvsHost = "localhost",
         pvsPort = argv.pvsport || 22334,
         xmlRPCRequestPath = "/RPC2",
         callbackHost = "localhost",
