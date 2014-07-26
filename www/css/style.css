@@ -170,6 +170,14 @@ svg #toolbox-palette {
 div.sequent {
     position: relative;
 }
+
+.decl {
+    cursor: pointer;
+}
+
+.decl.hover{
+    background: #ddd;
+}
 /** w2ui stuff*/
 .w2ui-layout > div .w2ui-panel {
     z-index: 0;

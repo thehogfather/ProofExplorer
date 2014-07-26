@@ -36,11 +36,33 @@ define(function (require, exports, module) {
 		});
 	}
 	
+    function createDeclWidget(name) {
+        var text = document.createTextNode(name);
+        var widget = document.createElement("span");
+        widget.appendChild(text);
+        widget.className = "decl";
+        return widget;
+    }
+    
 	function decorateWithNamesInfo(cm, namesInfo) {
 		namesInfo.forEach(function (ni) {
-			cm.markText({line: ni.place[0], ch: ni.place[1]},
-						{line: ni.place[2], ch: ni.place[3]},
-						{className: "decl"});
+            var from = {line: ni.place[0] - 1, ch: ni.place[1]},
+                to = {line: ni.place[2] - 1, ch: ni.place[3]};
+            var text = cm.getRange(from, to);
+            var widget = createDeclWidget(text);
+			cm.markText(from, to,
+						{replacedWith: widget, handleMouseEvents: true});
+            CodeMirror.on(widget, "mousedown", function () {
+               console.log(text); 
+            });
+            
+            $(widget).attr({"data-toggle": "tooltip", "data-placement": "top", "title": ni.decl})
+                .on("mouseover", function () {
+                    $(this).addClass("hover");
+                }).on("mouseout", function () {
+                    $(this).removeClass("hover");
+                });
+            
 		});
 	}
 	
