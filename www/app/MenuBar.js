@@ -1,5 +1,5 @@
 /**
- * Manages the command view
+ * Manages the menu items in the view.
  * @author Patrick Oladimeji
  * @date 5/9/14 9:30:30 AM
  */

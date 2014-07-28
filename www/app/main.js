@@ -1,5 +1,5 @@
 /**
- * 
+ * Main entry point for application
  * @author Patrick Oladimeji
  * @date 4/17/14 8:57:35 AM
  */

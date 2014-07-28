@@ -1,5 +1,5 @@
 #Proof Explorer for PVS
-This project is a front end for interacting with [PVS](http://pvs.csl.sri.com/) especially for visualisation and manipulation of proof trees in the PVS system.
+This project is a front end for interacting with [PVS](http://pvs.csl.sri.com/) especially for visualisation and manipulation of proof trees in the PVS system. This project is a work in progress.
 
 ###Features include
 1. Visual representation of proof tree
@@ -21,7 +21,7 @@ This project is a front end for interacting with [PVS](http://pvs.csl.sri.com/) 
 
 ###How to run
 * Start the PVS server using the --port option e.g. `pvs --port 22334
-* Start the proof explorer server by running `node rpc-client.js` from the server directory
+* From the server directory, start the proof explorer server by running `node rpc-client.js` or run `start.sh`
 * Open a Chrome browser and navigate to [http://localhost:8083](http://localhost:8083)
 
 ![Screenshot](screenshot.png?raw=true)

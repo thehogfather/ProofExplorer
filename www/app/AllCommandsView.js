@@ -1,5 +1,5 @@
 /**
- * 
+ * View for displaying and configuring favorite PVS proof commands
  * @author Patrick Oladimeji
  * @date 5/12/14 14:16:19 PM
  */

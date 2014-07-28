@@ -1,6 +1,6 @@
 {
   "name": "PVSProofExplorer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A javascript/HTML front end for interacting with proof trees.",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

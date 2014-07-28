@@ -1,5 +1,5 @@
 /**
- * 
+ * Readonly treelist visualisation
  * @author Patrick Oladimeji
  * @date 6/2/14 23:30:53 PM
  */
@@ -20,71 +20,14 @@ define(function (require, exports, module) {
         property = require("app/util/property");
     
     require("d3.layout.treelist");
-    /**
-        Find the node with the give id
-    */
-    function find(f, root) {
-        if (root) {
-            if (f(root)) {
-                return root;
-            } else if (root.children && root.children.length) {
-                var i, child, res;
-                for (i = 0; i < root.children.length; i++) {
-                    child = root.children[i];
-                    res = find(f, root.children[i]);
-                    //break out of loop if we have found it
-                    if (res) {
-                        return res;
-                    }
-                }
-            }
-        }
-        return null;
-    }
     
     function TreeList(d, _el) {
         eventDispatcher(this);
-//        var fst = this;
         data = d;
         el = _el || "body";
         d3.select(el).html("");
         this.labelFunction = property.call(this, function (d) { return d.name; });
         this.render(data);
-        
-//        function createMenu(menuItems, sourceEvent, selectedData) {
-//            var div = d3.select("body").append("div").attr("class", "contextmenu")
-//                .style("position", "absolute")
-//                .style("top", sourceEvent.pageY + "px")
-//                .style("left", sourceEvent.pageX + "px");
-//            var ul = div.append("ul").style("list-style", "none");
-//            
-//            var menus = ul.selectAll("li.menuitem").data(menuItems).enter()
-//                .append("li").attr("class", "menuitem")
-//                .html(String);
-//            
-//            menus.on("click", function (d) {
-//                //we want to rename or delete the actually selected data but we need to add items to the selected data
-//                //only if the selected item is a directory, if not a directory we want to add to the parent
-//                var data = ["Rename", "Delete"].indexOf(d) > -1 ? selectedData :
-//                            selectedData.isDirectory ? selectedData : selectedData.parent;
-//                var event = {type: d, data: data};
-//                console.log(event);
-//                fst.fire(event);
-//                div.remove();
-//            });
-//        }
-//        
-//        //create custom context menu for the list item
-//        d3.select(el).node().oncontextmenu = function (event) {
-//            event.preventDefault();
-//            d3.select("div.contextmenu").remove();
-//            createMenu(contextMenuItems, event, selectedData);
-//            return false;
-//        };
-//        //create event to clear any context menu items
-//        document.onclick = function () {
-//            d3.select("div.contextmenu").remove();
-//        };
     }
     
     TreeList.prototype.render =   function (parent, noAnimation) {
@@ -138,7 +81,7 @@ define(function (require, exports, module) {
 
         var listWrap = enteredNodes.append("div").classed("line", true);
         var updatedNodes = nodeEls, exitedNodes = nodeEls.exit();
-        var chevron = listWrap.append("span").attr("class", function (d) {
+        listWrap.append("span").attr("class", function (d) {
             var icon = d.children ? " fa-chevron-down"
                 : d._children ? "fa-chevron-right" : "";
             return "chevron fa " + icon;
@@ -202,96 +145,7 @@ define(function (require, exports, module) {
         }
     };
     
-    TreeList.prototype.markDirty = function (path, sign) {
-        d3.select(el).selectAll(".node")
-            .filter(function (d) {
-                return d.path === path;
-            }).classed("dirty", sign ? true : false);
-    };
-    
-    /**
-        adds the data to the parent
-    */
-    TreeList.prototype.addItem = function (item, parent) {
-        parent = parent || selectedData || data;
-        if (!parent.isDirectory) {
-            parent = parent.parent;
-        }
-        parent.children = parent.children || parent._children || [];
-        parent.children.push(item);
-        this.render(parent);
-        return item;
-    };
-    
-    TreeList.prototype.removeItem = function (path) {
-        var fst = this, toRemove = find(function (node) {
-            return node.path === path;
-        }, data);
-        if (toRemove) {
-            var index = toRemove.parent.children ? toRemove.parent.children.indexOf(toRemove) : -1;
-            if (index > -1) {
-                toRemove.parent.children.splice(index, 1);
-                fst.render(toRemove.parent);
-            }
-        }
-    };
-    
-    TreeList.prototype.createNodeEditor = function (node, onEnter, onCancel) {
-        var fst = this,
-            n = find(function (t) { return t.path === node.path; }, data) || selectedData;
-        
-        var nodes = d3.select(el).selectAll(".node").filter(function (d) {
-            return d === n;
-        });
-                
-        // an input text element is temporarily appended to let the user type the label
-        nodes.select(".label").html("")
-            .append("input").attr("class", "input_text")
-            .attr("type", "text")
-            .attr("placeholder", node.name)
-            .attr("value", node.name);
-        
-        var input_text = nodes.select(".input_text"),
-            oldPath = node.path;
-
-        function doCreate(elem, newLabel) {
-            if (newLabel === "") { newLabel = node.name; }
-            d3.select(elem.parentNode).html(newLabel);
-            fst.renameItem(n, newLabel);
-            if (onEnter && typeof onEnter === "function") {
-                onEnter(n, oldPath);
-            }
-        }
-        
-        var input = d3.select(input_text.node()).node();
-        input.focus();
-        input.onblur = function () {
-            doCreate(this, input.value);
-            input_text.node().onblur = null;
-        };
-        input.onkeydown = function (event) {
-            if (event.which === 13) { // enter key pressed
-                event.preventDefault();
-                doCreate(this, input.value);
-                input_text.node().onkeydown = null;
-                input_text.node().onblur = null;
-            } else if (event.which === 27) { // escape key pressed
-                event.preventDefault();
-                if (onCancel && typeof onCancel === "function") {
-                    onCancel(n, oldPath);
-                }
-                input_text.node().onkeydown = null;
-                input_text.node().onblur = null;
-            }
-        };
-    };
-    
-    TreeList.prototype.renameItem = function (item, newName) {
-        // FIXME: it's note safe to use replace because the string to be replaced could be (part of) the name of subdirectories listed in the path
-        item.path = item.path.replace(item.name, newName);
-        item.name = newName;
-    };
-    
+   
     TreeList.prototype.getSelectedItem = function () {
         return selectedData;
     };

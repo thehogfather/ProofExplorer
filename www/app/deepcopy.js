@@ -10,8 +10,12 @@
 define([], function () {
     "use strict";
     /**
-     * Adds a clone method to the object prototype if there isnt one source is
-     * from http://my.opera.com/GreyWyvern/blog/show.dml/1725165
+     * function for recursively copying an object chain into a new object
+	 * source is from http://my.opera.com/GreyWyvern/blog/show.dml/1725165
+	 * @param {object} obj the object to copy
+	 * @param {array<string>} ignoreList an array of property names to ignore e.g., 
+	 * useful to not deepcopy the parent property of node in a tree
+	 * @returns {object} copied object
      */
     return function (obj, ignoreList) {
         function deepcopy(obj) {
